@@ -1,0 +1,16 @@
+#!/bin/sh
+# Protección determinística de la rama principal.
+# Rechaza commits directos a main/master. Todo cambio va en feature/*, fix/* o hotfix/*.
+branch="$(git branch --show-current)"
+case "$branch" in
+  main|master)
+    echo ""
+    echo "✗ Commit rechazado: estás en la rama '$branch'."
+    echo "  Crea una rama de trabajo primero:"
+    echo "    git switch -c feature/<descripcion-corta>"
+    echo "  (Escape excepcional y justificado: git commit --no-verify)"
+    echo ""
+    exit 1
+    ;;
+esac
+exit 0
