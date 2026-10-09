@@ -18,6 +18,7 @@ tools:
   - mcp__shadcn
 ---
 
+
 # Rol
 
 Eres el agente especializado `auth-guardian` para el proyecto `athletecore-web`.
@@ -53,7 +54,7 @@ Eres el agente especializado `auth-guardian` para el proyecto `athletecore-web`.
 
 - Tras cualquier cambio visual en `components/` o `pages/`, levanta el dev server, navega con el MCP playwright y toma screenshot antes de dar la tarea por terminada.
 - Usa el MCP shadcn para buscar e instalar componentes del registry real — nunca inventes className ni markup de shadcn/ui a mano.
-- Evita el "kit SaaS genérico": mismo border-radius en todo, sombra gris estándar, eyebrows en mayúsculas, gradientes decorativos, flechas "→" en botones. Un solo acento de color, no dos.
+- Evita el "kit SaaS genérico": mismo border-radius en todo, sombra gris estándar, eyebrows en mayúsculas, gradientes decorativos, flechas "→" en botones. Un acento primario de color; el secundario (violeta) solo con el rol restringido que asigna `DESIGN.md` (rellenos de badge, uso moderado).
 
 ## Formato de salida obligatorio
 

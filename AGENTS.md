@@ -10,7 +10,7 @@ SPA en **React 19 + TypeScript + Vite 8**, único cliente de **AthleteCore API**
 
 - Tras cualquier cambio visual en `components/` o `pages/`, levantar el dev server, navegar con el MCP playwright y tomar screenshot antes de dar la tarea por terminada.
 - Usar el MCP shadcn para buscar e instalar componentes del registry real — nunca inventar className ni markup de shadcn/ui a mano.
-- Evitar el "kit SaaS genérico": mismo border-radius en todo, sombra gris estándar, eyebrows en mayúsculas, gradientes decorativos, flechas "→" en botones. Un solo acento de color, no dos.
+- Evitar el "kit SaaS genérico": mismo border-radius en todo, sombra gris estándar, eyebrows en mayúsculas, gradientes decorativos, flechas "→" en botones. Un acento primario de color; el secundario (violeta) solo con el rol restringido que asigna `DESIGN.md` (rellenos de badge, uso moderado).
 
 ## Decisiones de arquitectura tomadas (sprint 0)
 
@@ -39,3 +39,11 @@ SPA en **React 19 + TypeScript + Vite 8**, único cliente de **AthleteCore API**
 - Ramas `feature/*` obligatorias: el hook `.githooks/pre-commit` rechaza commits directos a `main` (ya activo vía `core.hooksPath`).
 - El proceso de desarrollo se orquesta con **OpenSpec** (`openspec/`).
 - Autonomía: los agentes actúan solos dentro de su rama; piden confirmación solo ante acciones destructivas (borrados masivos, cambios de configuración, nuevas dependencias).
+
+## Design contract
+
+All UI work follows `DESIGN.md` (tokens in `docs/design/tokens.json`). Never hardcode colors or styles.
+
+## Agent and skill configuration (OpenCode + Claude Code)
+
+`.opencode/agents` and `.opencode/skills` are canonical. `.claude/agents` and `.claude/skills` mirror them, maintained by hand: when you change an agent or skill, edit the `.opencode` file and then apply the same body change to the `.claude/` copy (bodies identical; frontmatter stays tool-specific). OpenSpec skills belong to the OpenSpec tooling and each tree uses its own command syntax (`/opsx-apply` in OpenCode, `/opsx:apply` in Claude Code) — do not normalize them across trees.

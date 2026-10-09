@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "npm run typecheck",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "tokens:build": "node scripts/build-tokens.mjs",
+    "design:check": "node scripts/build-tokens.mjs --check && node scripts/check-contrast.mjs && node scripts/check-hardcoded-styles.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.8",

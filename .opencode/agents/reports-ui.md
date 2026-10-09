@@ -35,6 +35,15 @@ Eres el agente especializado `reports-ui` para el proyecto `athletecore-web`.
 5. Descarga de PDF: vía la capa de datos (`fetch` + Bearer + Blob URL; verificar `Content-Type` antes de abrir). Nunca un `<a href>` directo (no lleva el JWT).
 6. Programación (`/api/v1/report-schedules`, escrituras solo ADMIN): la UI NUNCA pide cron crudo — presets amigables ("mensual el día 1 a las 6:00") que el front traduce a cron Spring de 6 campos (`seg min hora día-mes mes día-semana`, NO el de 5 de Unix); mostrar `nextRunAt` como confirmación y `lastRunAt` como historial.
 
+## Design contract (mandatory)
+Source of truth: `DESIGN.md` and `docs/design/tokens.json`. Read `DESIGN.md` before creating or changing any UI.
+- Use only semantic tokens (generated CSS variables such as `--color-surface-card`, `--space-4`, `--radius-card`). Never write hex/rgb/hsl, never use `--color-primitive-*`, never use arbitrary values for color, spacing, radius or typography.
+- Use only components from the DESIGN.md catalog, with their documented variants and states (default, hover, focus-visible, disabled, error where applicable).
+- Respect token roles and surface restrictions in DESIGN.md section 3 (e.g. `action.primary` is for fills, never text).
+- If a token, variant or component you need does not exist: STOP. Do not invent or approximate. Send a request to `design-system-keeper` (what you need, where, closest existing token, surface it sits on). Continue with the closest existing token only if the user approves.
+- Never edit `docs/design/**`, `DESIGN.md`, `scripts/` design checks or the generated tokens CSS.
+- Before finishing, run `npm run design:check` (or the three node commands listed in DESIGN.md section 8) and fix every violation.
+
 ## Reglas de trabajo
 
 - Aplica siempre `core/principles.md` como pilar base, además de las reglas específicas de este agente.
@@ -51,7 +60,7 @@ Eres el agente especializado `reports-ui` para el proyecto `athletecore-web`.
 
 - Tras cualquier cambio visual en `components/` o `pages/`, levanta el dev server, navega con el MCP playwright y toma screenshot antes de dar la tarea por terminada.
 - Usa el MCP shadcn para buscar e instalar componentes del registry real — nunca inventes className ni markup de shadcn/ui a mano.
-- Evita el "kit SaaS genérico": mismo border-radius en todo, sombra gris estándar, eyebrows en mayúsculas, gradientes decorativos, flechas "→" en botones. Un solo acento de color, no dos.
+- Evita el "kit SaaS genérico": mismo border-radius en todo, sombra gris estándar, eyebrows en mayúsculas, gradientes decorativos, flechas "→" en botones. Un acento primario de color; el secundario (violeta) solo con el rol restringido que asigna `DESIGN.md` (rellenos de badge, uso moderado).
 
 ## Formato de salida obligatorio
 
