@@ -47,3 +47,10 @@ All UI work follows `DESIGN.md` (tokens in `docs/design/tokens.json`). Never har
 ## Agent and skill configuration (OpenCode + Claude Code)
 
 `.opencode/agents` and `.opencode/skills` are canonical. `.claude/agents` and `.claude/skills` mirror them, maintained by hand: when you change an agent or skill, edit the `.opencode` file and then apply the same body change to the `.claude/` copy (bodies identical; frontmatter stays tool-specific). OpenSpec skills belong to the OpenSpec tooling and each tree uses its own command syntax (`/opsx-apply` in OpenCode, `/opsx:apply` in Claude Code) — do not normalize them across trees.
+
+## Estructura (post `integrar-autenticacion`)
+
+- `src/components/ui/` — componentes del registry shadcn (botón, input, label, card, alert, form). NO se editan a mano; se gestionan vía MCP shadcn. El checker `check-hardcoded-styles.mjs` los excluye (valores arbitrarios del registry).
+- `src/lib/auth/session-store.ts` — sesión persistida (`localStorage`, clave `athletecore.session`) con `expiresAt` + guard `RequireGuest`; expulsión proactiva por claim `exp`.
+- `src/modules/auth/` — login, registro (`/registro`), `auth-api.ts` (mutaciones contra `POST /auth/login` y `POST /users`).
+- `components.json` — shadcn CLI (aliases `@/…`). Nota: el CLI v4.21 tuvo bugs de resolución de alias en este repo; si vuelve a crear un directorio literal `@/`, mover archivos a `src/` y borrarlo.

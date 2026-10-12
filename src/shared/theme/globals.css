@@ -1,30 +1,156 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "../../styles/tokens.css";
 
-@theme {
-  --color-ink: #16181d;
-  --color-ink-soft: #4b5260;
-  --color-line: #d9dce3;
-  --color-paper: #f6f6f3;
-  --color-surface: #ffffff;
-  --color-accent: #1d5fd1;
-  --color-accent-ink: #ffffff;
+/*
+ * Tema dark de AthleteCore. Los valores viven SOLO en src/styles/tokens.css
+ * (generado desde docs/design/tokens.json). Aquí únicamente mapeamos tokens
+ * semánticos a utilidades Tailwind y a las variables que consumen los
+ * componentes del registry shadcn. Prohibido escribir literales de color.
+ */
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --radius-panel: 10px;
-}
+@custom-variant dark (&:is(.dark *));
 
+/*
+ * Alias intermedios sin capa (unlayered): rompen la autorreferencia de las
+ * entradas de @theme inline que comparten nombre con los tokens
+ * (`--radius-control: var(--radius-control)` dependería del orden de capas).
+ * Unlayered gana siempre a @layer theme, así que el mapeo es estable incluso
+ * si build-tokens.mjs envuelve algún día tokens.css en una capa.
+ */
 :root {
-  color-scheme: light;
+  --dt-radius-control: var(--radius-control);
+  --dt-radius-card: var(--radius-card);
+  --dt-radius-pill: var(--radius-pill);
+
+  /* Variables crudas que el registry de shadcn referencia directamente
+     (button.tsx: color-mix con --secondary/--foreground) */
+  --secondary: var(--color-surface-elevated);
+  --foreground: var(--color-text-primary);
 }
 
-body {
-  margin: 0;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-sans);
+@theme inline {
+  /* ---- Tipografía (tokens del contrato) ---- */
+  --font-sans: var(--font-family-sans);
+  --font-heading: var(--font-family-sans);
+
+  --text-caption: var(--font-size-caption);
+  --text-caption--line-height: var(--font-line-height-caption);
+  --text-label: var(--font-size-label);
+  --text-label--line-height: var(--font-line-height-label);
+  --text-body: var(--font-size-body);
+  --text-body--line-height: var(--font-line-height-body);
+  --text-title: var(--font-size-title);
+  --text-title--line-height: var(--font-line-height-title);
+  --text-heading: var(--font-size-heading);
+  --text-heading--line-height: var(--font-line-height-heading);
+  --text-metric: var(--font-size-metric);
+  --text-metric--line-height: var(--font-line-height-metric);
+
+  /* ---- Radios del contrato (vía alias --dt-* para evitar autorreferencia) ---- */
+  --radius-control: var(--dt-radius-control);
+  --radius-card: var(--dt-radius-card);
+  --radius-pill: var(--dt-radius-pill);
+  --radius-sm: var(--dt-radius-control);
+  --radius-md: var(--dt-radius-control);
+  --radius-lg: var(--dt-radius-control);
+  --radius-xl: var(--dt-radius-card);
+
+  /* ---- Superficies, bordes, texto (utilidades propias) ---- */
+  --color-bg: var(--color-surface-bg);
+  --color-panel: var(--color-surface-card);
+  --color-drawer: var(--color-surface-sidebar);
+  --color-raised: var(--color-surface-elevated);
+  --color-line: var(--color-border-default);
+  --color-divider: var(--color-border-divider);
+  --color-field-line: var(--color-border-input);
+
+  --color-strong: var(--color-text-primary);
+  --color-soft: var(--color-text-secondary);
+  --color-dim: var(--color-text-muted);
+  --color-faint: var(--color-text-subtle);
+  --color-on-primary: var(--color-text-on-primary);
+
+  --color-primary-hover: var(--color-action-primary-hover);
+  --color-primary-active: var(--color-action-primary-active);
+  --color-primary-text: var(--color-action-primary-text);
+  --color-subtle-primary: var(--color-subtle-primary);
+  --color-focus: var(--color-focus-ring);
+
+  --color-success: var(--color-status-success);
+  --color-success-subtle: var(--color-status-success-subtle);
+  --color-warning: var(--color-status-warning);
+  --color-warning-subtle: var(--color-status-warning-subtle);
+  --color-info: var(--color-status-info);
+  --color-info-subtle: var(--color-status-info-subtle);
+  --color-danger: var(--color-status-danger);
+  --color-danger-text: var(--color-status-danger-text);
+  --color-danger-subtle: var(--color-status-danger-subtle);
+
+  /* ---- Datos ---- */
+  --color-data-1: var(--color-data-series-1);
+  --color-data-2: var(--color-data-series-2);
+  --color-data-3: var(--color-data-series-3);
+  --color-data-4: var(--color-data-series-4);
+  --color-avatar: var(--color-data-avatar);
+
+  /* ---- Capa consumida por componentes del registry shadcn ---- */
+  --color-background: var(--color-surface-bg);
+  --color-foreground: var(--color-text-primary);
+  --color-card: var(--color-surface-card);
+  --color-card-foreground: var(--color-text-secondary);
+  --color-popover: var(--color-surface-elevated);
+  --color-popover-foreground: var(--color-text-primary);
+  --color-primary: var(--color-action-primary);
+  --color-primary-foreground: var(--color-text-on-primary);
+  --color-secondary: var(--color-surface-elevated);
+  --color-secondary-foreground: var(--color-text-primary);
+  --color-muted: var(--color-surface-elevated);
+  --color-muted-foreground: var(--color-text-muted);
+  --color-accent: var(--color-subtle-primary);
+  --color-accent-foreground: var(--color-text-primary);
+  --color-destructive: var(--color-status-danger-text);
+  --color-destructive-foreground: var(--color-text-on-primary);
+  --color-border: var(--color-border-default);
+  --color-input: var(--color-border-input);
+  --color-ring: var(--color-focus-ring);
+
+  --color-sidebar: var(--color-surface-sidebar);
+  --color-sidebar-foreground: var(--color-text-primary);
+  --color-sidebar-primary: var(--color-action-primary);
+  --color-sidebar-primary-foreground: var(--color-text-on-primary);
+  --color-sidebar-accent: var(--color-surface-card);
+  --color-sidebar-accent-foreground: var(--color-text-primary);
+  --color-sidebar-border: var(--color-border-default);
+  --color-sidebar-ring: var(--color-focus-ring);
+
+  --color-chart-1: var(--color-data-series-1);
+  --color-chart-2: var(--color-data-series-2);
+  --color-chart-3: var(--color-data-series-3);
+  --color-chart-4: var(--color-data-series-4);
 }
 
-::selection {
-  background: var(--color-accent);
-  color: var(--color-accent-ink);
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    background-color: var(--color-surface-bg);
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-surface-bg);
+    color: var(--color-text-primary);
+  }
+
+  ::selection {
+    background: var(--color-action-primary);
+    color: var(--color-text-on-primary);
+  }
 }

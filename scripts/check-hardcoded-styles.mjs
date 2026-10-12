@@ -17,6 +17,8 @@ const EXTENSIONS = new Set([
   "css", "scss", "sass", "less", "js", "jsx", "ts", "tsx", "vue", "svelte", "html", "astro",
 ]);
 const GENERATED_TOKENS = join(ROOT, "src/styles/tokens.css");
+// shadcn registry-managed code: variants are curated upstream, we only control usage
+const REGISTRY_UI = join(ROOT, "src/components/ui");
 
 // ---------- patterns ----------
 const HEX_COLOR = /#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/;
@@ -64,7 +66,9 @@ function collect(dir, out) {
   }
   return out;
 }
-const files = collect(ROOT, []).filter((f) => f !== GENERATED_TOKENS && !f.startsWith(SCRIPTS_DIR));
+const files = collect(ROOT, []).filter(
+  (f) => f !== GENERATED_TOKENS && !f.startsWith(SCRIPTS_DIR) && !f.startsWith(REGISTRY_UI),
+);
 
 // ---------- scan ----------
 const violations = [];

@@ -1,9 +1,10 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { AppShell } from "@/app/app-shell";
-import { RequireAuth, RequireRoles } from "@/app/guards";
+import { RequireAuth, RequireGuest, RequireRoles } from "@/app/guards";
 import { AthletesPage } from "@/modules/athletes/athletes-page";
 import { LoginPage } from "@/modules/auth/login-page";
+import { RegisterPage } from "@/modules/auth/register-page";
 import { CheckupsPage } from "@/modules/checkups/checkups-page";
 import { DashboardPage } from "@/modules/dashboard/dashboard-page";
 import { ReportsPage } from "@/modules/reports/reports-page";
@@ -13,7 +14,19 @@ import { ErrorState } from "@/shared/components/states";
 export const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: (
+      <RequireGuest>
+        <LoginPage />
+      </RequireGuest>
+    ),
+  },
+  {
+    path: "/registro",
+    element: (
+      <RequireGuest>
+        <RegisterPage />
+      </RequireGuest>
+    ),
   },
   {
     path: "/",

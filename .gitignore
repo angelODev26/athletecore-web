@@ -8,3 +8,4 @@ test-results/
 *.local
 .DS_Store
 .codegraph/
+.playwright-mcp/

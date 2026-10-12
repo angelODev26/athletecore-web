@@ -1,7 +1,9 @@
+import { useMemo } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 
-import { decodeJwtPayload, getRolesFromToken, hasAnyRole } from "@/lib/auth/jwt";
-import { useSessionStore } from "@/lib/auth/session-store";
+import { Button } from "@/components/ui/button";
+import { getUsernameFromToken, hasAnyRole } from "@/lib/auth/jwt";
+import { useSessionRoles, useSessionStore } from "@/lib/auth/session-store";
 
 interface NavItem {
   to: string;
@@ -21,25 +23,24 @@ const NAV_ITEMS: readonly NavItem[] = [
 export function AppShell() {
   const accessToken = useSessionStore((state) => state.tokens?.access ?? null);
   const clearSession = useSessionStore((state) => state.clearSession);
-  const userRoles = getRolesFromToken(accessToken);
-  const claims = accessToken ? decodeJwtPayload(accessToken) : null;
-  const username = typeof claims?.sub === "string" ? claims.sub : null;
+  const userRoles = useSessionRoles();
+  const username = useMemo(() => getUsernameFromToken(accessToken), [accessToken]);
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.roles || hasAnyRole(userRoles, item.roles));
 
   return (
-    <div className="bg-paper text-ink flex min-h-screen">
-      <aside className="border-line bg-surface flex w-60 shrink-0 flex-col border-r p-4">
-        <p className="text-ink text-sm font-semibold">AthleteCore</p>
-        <nav className="mt-6 grid gap-1" aria-label="Navegación principal">
+    <div className="bg-bg text-strong flex min-h-screen flex-col md:flex-row">
+      <aside className="border-line bg-drawer flex shrink-0 flex-col border-b p-4 md:w-60 md:border-r md:border-b-0">
+        <p className="text-strong text-title font-semibold">AthleteCore</p>
+        <nav className="mt-4 grid gap-1 md:mt-6" aria-label="Navegación principal">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
               className={({ isActive }) =>
-                `rounded px-3 py-2 text-sm no-underline transition-colors ${
-                  isActive ? "bg-accent text-accent-ink" : "text-ink-soft hover:text-ink"
+                `rounded-control px-3 py-2 text-label font-medium no-underline transition-colors ${
+                  isActive ? "bg-primary text-on-primary" : "text-dim hover:bg-panel hover:text-strong"
                 }`
               }
             >
@@ -47,19 +48,20 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-line mt-auto border-t pt-4">
-          {username ? <p className="text-ink-soft truncate text-xs">{username}</p> : null}
-          <button
+        <div className="border-divider mt-auto border-t pt-4">
+          {username ? <p className="text-dim truncate text-caption">{username}</p> : null}
+          <Button
             type="button"
+            variant="ghost"
+            className="text-dim hover:text-strong mt-1 h-auto justify-start p-0 text-label font-normal"
             onClick={clearSession}
-            className="text-ink-soft hover:text-ink mt-2 cursor-pointer border-0 bg-transparent p-0 text-left text-sm"
             data-testid="logout-button"
           >
             Cerrar sesión
-          </button>
+          </Button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 p-8">
+      <main className="min-w-0 flex-1 p-4 md:p-8">
         <Outlet />
       </main>
     </div>
