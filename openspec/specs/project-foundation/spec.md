@@ -17,11 +17,15 @@ El sistema SHALL proveer una SPA React 19 + TypeScript empaquetada con Vite 8, c
 - **THEN** se genera `dist/` sin errores de TypeScript
 
 ### Requirement: Base visual con Tailwind 4 y tokens propios
-El sistema SHALL configurar Tailwind 4 con un archivo de tema que exponga tokens CSS del proyecto y exactamente un color de acento principal.
+El sistema SHALL configurar Tailwind 4 de modo que las utilidades consuman los tokens semánticos generados desde `docs/design/tokens.json` (tema dark, `color-scheme: dark`), y SHALL instalar los componentes base del catálogo (button, input, label, card, alert, form) vía shadcn MCP con sus variables mapeadas a esos tokens.
 
 #### Scenario: Tokens disponibles para componentes
-- **WHEN** un componente del shell usa clases basadas en los tokens del tema
-- **THEN** el estilo se resuelve desde la configuración local y no desde valores shadcn por defecto
+- **WHEN** un componente del shell o un shadcn instalado usa color/radio/espaciado/tipografía
+- **THEN** el estilo se resuelve desde `src/styles/tokens.css` o su alias semántico y no desde literales ni valores por defecto del registry
+
+#### Scenario: Verificación de contrato de diseño
+- **WHEN** se ejecuta `npm run design:check`
+- **THEN** pasa sin violaciones (sin literales, sin primitivas, sin valores arbitrarios)
 
 ### Requirement: Variables de entorno del cliente
 El sistema SHALL leer la URL base de la API desde `VITE_API_URL` y usar `http://localhost:8080` como valor por defecto.

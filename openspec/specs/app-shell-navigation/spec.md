@@ -13,14 +13,22 @@ El sistema SHALL renderizar un shell persistente con navegación a las secciones
 - **THEN** la ruta cambia a la sección de deportistas y muestra su pantalla placeholder
 
 ### Requirement: Rutas públicas y privadas
-El sistema SHALL exponer una ruta pública de login y proteger el resto de rutas; un usuario sin sesión MUST ser redirigido a login.
+El sistema SHALL exponer `/login` y `/registro` como rutas públicas y proteger el resto; un usuario sin sesión o con token expirado MUST ser redirigido a `/login`.
 
 #### Scenario: Acceder sin sesión
 - **WHEN** un usuario sin token navega a una ruta privada
 - **THEN** es redirigido a `/login`
 
+#### Scenario: Token expirado en arranque
+- **WHEN** el token persistido ha pasado su `exp`
+- **THEN** la sesión se limpia y redirige a `/login`
+
+#### Scenario: Usuario autenticado va al login
+- **WHEN** un usuario con sesión vigente navega a `/login` o `/registro`
+- **THEN** es redirigido al dashboard
+
 ### Requirement: Navegación filtrada por rol
-El sistema SHALL mostrar únicamente las opciones de navegación permitidas para los roles presentes en el JWT; entrenamientos y tabla nacional SHALL ser visibles solo para ADMIN/COACH cuando la regla del contrato lo exija.
+El sistema SHALL mostrar únicamente las opciones de navegación permitidas para los roles presentes en el JWT; entrenamientos SHALL ser visible solo para ADMIN/COACH.
 
 #### Scenario: Usuario sin rol de entrenamiento
 - **WHEN** un usuario sin rol COACH ni ADMIN abre la app

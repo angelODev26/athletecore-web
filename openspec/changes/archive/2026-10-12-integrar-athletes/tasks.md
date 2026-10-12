@@ -68,7 +68,7 @@
 
 - [x] 5.1 Actualizar este archivo marcando los ítems realizados.
 - [x] 5.2 Anotar cualquier desviación del `design.md` (y por qué).
-- [ ] 5.3 Commit/push/merge decidido por el humano; el change se archiva después.
+- [x] 5.3 Commit/push/merge hecho por el humano en `main`; el change queda archivado tras el sync de specs.
 
 ## Desviaciones registradas (5.2)
 
