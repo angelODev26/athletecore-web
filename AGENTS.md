@@ -50,7 +50,8 @@ All UI work follows `DESIGN.md` (tokens in `docs/design/tokens.json`). Never har
 
 ## Estructura (post `integrar-autenticacion`)
 
-- `src/components/ui/` — componentes del registry shadcn (botón, input, label, card, alert, form). NO se editan a mano; se gestionan vía MCP shadcn. El checker `check-hardcoded-styles.mjs` los excluye (valores arbitrarios del registry).
+- `src/components/ui/` — componentes del registry shadcn (botón, input, label, card, alert, form, dialog, select, alert-dialog, …). NO se editan a mano; se gestionan vía MCP shadcn. El checker `check-hardcoded-styles.mjs` los excluye (valores arbitrarios del registry).
 - `src/lib/auth/session-store.ts` — sesión persistida (`localStorage`, clave `athletecore.session`) con `expiresAt` + guard `RequireGuest`; expulsión proactiva por claim `exp`.
 - `src/modules/auth/` — login, registro (`/registro`), `auth-api.ts` (mutaciones contra `POST /auth/login` y `POST /users`).
+- `src/modules/training/` — entrenamientos (solo ADMIN/COACH): lista de planes con paginación client-side (`plans-list-page`), árbol del plan (`plan-detail-page`), formularios en dialog (`plan-form`, `cycle-form` con pre-validación de reglas 400, `session-form`), detalle de sesión con pase de lista upsert (`session-detail-page` + `attendance-grid`), bandeja de alertas con dismiss 100 % local (`alerts-page` + `alerts-ack-store`, clave `athletecore.alerts.ack`), capa de datos (`training-api.ts` con `fetchAllAthletes()`), formatos T10 (`format.ts`).
 - `components.json` — shadcn CLI (aliases `@/…`). Nota: el CLI v4.21 tuvo bugs de resolución de alias en este repo; si vuelve a crear un directorio literal `@/`, mover archivos a `src/` y borrarlo.

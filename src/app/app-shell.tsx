@@ -1,9 +1,11 @@
-import { useMemo } from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { setForbiddenHandler } from "@/lib/api/http";
 import { getUsernameFromToken, hasAnyRole } from "@/lib/auth/jwt";
 import { useSessionRoles, useSessionStore } from "@/lib/auth/session-store";
+import { ForbiddenState } from "@/shared/components/states";
 
 interface NavItem {
   to: string;
@@ -25,6 +27,21 @@ export function AppShell() {
   const clearSession = useSessionStore((state) => state.clearSession);
   const userRoles = useSessionRoles();
   const username = useMemo(() => getUsernameFromToken(accessToken), [accessToken]);
+  const location = useLocation();
+
+  // C10: un 403 real del servidor (rol insuficiente) muestra la vista "sin permisos"
+  // SIN cerrar sesión — no confundir con expiración (401 → login, lo hace http.ts).
+  // Se desregistra al desmontar y el flag se reinicia al cambiar de ruta.
+  const [forbidden, setForbidden] = useState(false);
+
+  useEffect(() => {
+    setForbiddenHandler(() => setForbidden(true));
+    return () => setForbiddenHandler(null);
+  }, []);
+
+  useEffect(() => {
+    setForbidden(false);
+  }, [location.pathname]);
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.roles || hasAnyRole(userRoles, item.roles));
 
@@ -62,7 +79,7 @@ export function AppShell() {
         </div>
       </aside>
       <main className="min-w-0 flex-1 p-4 md:p-8">
-        <Outlet />
+        {forbidden ? <ForbiddenState /> : <Outlet />}
       </main>
     </div>
   );

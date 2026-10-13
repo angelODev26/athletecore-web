@@ -11,7 +11,10 @@ import { RegisterPage } from "@/modules/auth/register-page";
 import { CheckupsPage } from "@/modules/checkups/checkups-page";
 import { DashboardPage } from "@/modules/dashboard/dashboard-page";
 import { ReportsPage } from "@/modules/reports/reports-page";
-import { TrainingPage } from "@/modules/training/training-page";
+import { AlertsPage } from "@/modules/training/alerts-page";
+import { PlanDetailPage } from "@/modules/training/plan-detail-page";
+import { PlansListPage } from "@/modules/training/plans-list-page";
+import { SessionDetailPage } from "@/modules/training/session-detail-page";
 import { ErrorState } from "@/shared/components/states";
 
 export const router = createBrowserRouter([
@@ -49,7 +52,31 @@ export const router = createBrowserRouter([
         path: "training",
         element: (
           <RequireRoles roles={["ADMIN", "COACH"]}>
-            <TrainingPage />
+            <PlansListPage />
+          </RequireRoles>
+        ),
+      },
+      {
+        path: "training/plans/:planId",
+        element: (
+          <RequireRoles roles={["ADMIN", "COACH"]}>
+            <PlanDetailPage />
+          </RequireRoles>
+        ),
+      },
+      {
+        path: "training/sessions/:sessionId",
+        element: (
+          <RequireRoles roles={["ADMIN", "COACH"]}>
+            <SessionDetailPage />
+          </RequireRoles>
+        ),
+      },
+      {
+        path: "training/alerts",
+        element: (
+          <RequireRoles roles={["ADMIN", "COACH"]}>
+            <AlertsPage />
           </RequireRoles>
         ),
       },
