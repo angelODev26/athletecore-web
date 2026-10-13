@@ -239,6 +239,18 @@ describe("TimeFormDialog — alta de tiempo (C2/C5)", () => {
     expect(apiFetchMock).toHaveBeenCalledTimes(1); // solo el GET del detalle
   });
 
+  it("tiempo 0:00.000 (timeSeconds = 0) bloqueado: el contrato exige > 0 (doc 06)", async () => {
+    const user = await openTimeForm();
+
+    await pickStyle("Libre");
+    fireEvent.change(screen.getByTestId("time-distance-input"), { target: { value: "100" } });
+    fireEvent.change(screen.getByTestId("time-input"), { target: { value: "0:00.000" } });
+    await user.click(screen.getByTestId("time-submit-button"));
+
+    expect(await screen.findByText("El tiempo debe ser mayor que 0")).toBeInTheDocument();
+    expect(apiFetchMock).toHaveBeenCalledTimes(1); // sin POST
+  });
+
   it("duplicado (style, distance) prevalidado localmente contra detail.times", async () => {
     const user = await openTimeForm();
 

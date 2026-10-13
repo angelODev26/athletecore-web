@@ -74,8 +74,11 @@ export function validateTimeLocally(values: Pick<TimeFormValues, "distance" | "t
     errors.distance = "La distancia debe ser un número entero mayor o igual que 1";
   }
 
-  if (parseTimeToSeconds(values.time) === null) {
+  const timeSeconds = parseTimeToSeconds(values.time);
+  if (timeSeconds === null) {
     errors.time = `Formato esperado ${TIME_INPUT_PLACEHOLDER} (ej. 01:05.250)`;
+  } else if (timeSeconds <= 0) {
+    errors.time = "El tiempo debe ser mayor que 0";
   }
 
   return errors;

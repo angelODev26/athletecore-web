@@ -51,6 +51,11 @@ export function AthleteCheckupsPage() {
 
   const checkupsQuery = useAthleteCheckups(athleteId, filters);
 
+  // C5: la pre-validación de duplicado usa la lista SIN filtrar. Se consulta aparte
+  // (sin params) y solo mientras el dialog está abierto — la lista principal puede
+  // llevar un filtro año/mes que ocultaría el período duplicado (falso negativo).
+  const unfilteredQuery = useAthleteCheckups(athleteId, {}, formOpen);
+
   const checkups = checkupsQuery.data ?? [];
 
   // Años disponibles en la lista cargada + el actual, ordenados desc (presentación).
@@ -126,8 +131,8 @@ export function AthleteCheckupsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         athleteId={athleteId}
-        // Alta SIN filtro aplicado (C5): lista tal cual se cargó al abrir.
-        existingCheckups={formOpen ? (checkupsQuery.data ?? []) : []}
+        // Alta: pre-validación de duplicado contra la lista SIN filtro (C5).
+        existingCheckups={formOpen ? (unfilteredQuery.data ?? []) : []}
       />
     </div>
   );

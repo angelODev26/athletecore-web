@@ -131,7 +131,7 @@ describe("groupReferences — agrupación en memoria (C9)", () => {
 });
 
 describe("validateReferenceLocally / isReferenceDuplicate (C5/C7)", () => {
-  it("rechaza tiempo sin 3 decimales y posición fuera de 1–3", () => {
+  it("rechaza tiempo sin 3 decimales, posición fuera de 1–3 y tiempo = 0", () => {
     expect(validateReferenceLocally({ distance: "100", position: "2", time: "1:5.25" }).time).toMatch(
       /Formato esperado/,
     );
@@ -140,6 +140,10 @@ describe("validateReferenceLocally / isReferenceDuplicate (C5/C7)", () => {
     );
     expect(validateReferenceLocally({ distance: "0", position: "1", time: "01:02.500" }).distance).toMatch(
       /entero mayor o igual que 1/,
+    );
+    // El contrato exige timeSeconds > 0 (@DecimalMin inclusive = false, doc 06).
+    expect(validateReferenceLocally({ distance: "100", position: "1", time: "0:00.000" }).time).toMatch(
+      /mayor que 0/,
     );
   });
 

@@ -355,7 +355,7 @@ function MatrixBody({
                         <Button
                           type="button"
                           variant="ghost"
-                          className="text-danger h-7 px-2 text-caption"
+                          className="text-danger-text h-7 px-2 text-caption"
                           data-testid={`reference-delete-${group.key}-${position}`}
                           onClick={() => onDelete(cell)}
                         >

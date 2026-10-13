@@ -256,7 +256,7 @@ describe("mutaciones de chequeos", () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: checkupDetailKey(20) });
   });
 
-  it("useAddCheckupTime hace POST /checkups/{id}/times con timeSeconds numérico e invalida el detalle", async () => {
+  it("useAddCheckupTime hace POST /checkups/{id}/times con timeSeconds numérico e invalida detalle + comparación (enmienda C8)", async () => {
     apiFetchMock.mockResolvedValueOnce({ id: 30 });
 
     const { wrapper, queryClient } = createWrapper();
@@ -271,6 +271,8 @@ describe("mutaciones de chequeos", () => {
       body: { style: "LIBRE", distance: 100, timeSeconds: 65.25 },
     });
     expect(spy).toHaveBeenCalledWith({ queryKey: checkupDetailKey(20) });
+    // La comparación es lazy pero si ya se había lanzado, debe refrescarse.
+    expect(spy).toHaveBeenCalledWith({ queryKey: checkupComparisonKey(20) });
   });
 });
 

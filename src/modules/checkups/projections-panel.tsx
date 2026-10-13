@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -32,22 +33,22 @@ export function ProjectionsPanel({ athleteId }: { athleteId: number }) {
   const isAdmin = hasAnyRole(userRoles, ["ADMIN"]);
 
   if (projectionsQuery.isPending) {
-    return (
+    return wrapPanel(
       <div className="grid gap-2" data-testid="projections-loading">
         <Skeleton className="h-5 w-2/3" />
         <Skeleton className="h-5 w-1/2" />
         <Skeleton className="h-5 w-3/4" />
-      </div>
+      </div>,
     );
   }
 
   if (projectionsQuery.isError) {
     if (isIncompleteReferenceError(projectionsQuery.error)) {
-      return (
-        <IncompleteReferenceState testId="projections-incomplete-state" isAdmin={isAdmin} />
+      return wrapPanel(
+        <IncompleteReferenceState testId="projections-incomplete-state" isAdmin={isAdmin} />,
       );
     }
-    return (
+    return wrapPanel(
       <div
         className="border-line bg-panel rounded-card grid place-items-center border p-6 text-center"
         data-testid="projections-error"
@@ -64,22 +65,22 @@ export function ProjectionsPanel({ athleteId }: { athleteId: number }) {
             Reintentar
           </Button>
         </div>
-      </div>
+      </div>,
     );
   }
 
   const projections = projectionsQuery.data ?? [];
 
   if (projections.length === 0) {
-    return (
+    return wrapPanel(
       <p className="text-dim text-body" data-testid="projections-empty">
         Sin proyección todavía: registra chequeos con tiempos de prueba.
-      </p>
+      </p>,
     );
   }
 
-  return (
-    <div className="border-line overflow-hidden rounded-control border" data-testid="projections-table">
+  return wrapPanel(
+    <div className="border-line overflow-hidden rounded-control border">
       <Table>
         <TableHeader>
           <TableRow>
@@ -108,6 +109,15 @@ export function ProjectionsPanel({ athleteId }: { athleteId: number }) {
           ))}
         </TableBody>
       </Table>
+    </div>,
+  );
+}
+
+/** C10: contenedor con el testid vinculante; `contents` = sin impacto en el layout. */
+function wrapPanel(children: ReactNode) {
+  return (
+    <div className="contents" data-testid="projections-panel">
+      {children}
     </div>
   );
 }

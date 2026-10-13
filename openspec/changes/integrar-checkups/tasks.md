@@ -158,3 +158,23 @@
    interacción Radix (Select/Dialog) falla de forma intermitente también en módulos
    no tocados (athletes/training). Aislados y en ejecuciones completas consecutivas,
    los 206 tests pasan. No se introduce ningún cambio de configuración en este change.
+5. **Enmienda a C8 (`useAddCheckupTime` también invalida la comparación).** La review
+   detectó que si el usuario ya había lanzado "Comparar con referencia", el panel
+   quedaba stale tras agregar un tiempo (C8 solo invalidaba el detalle). Se añade
+   `invalidateQueries({ queryKey: checkupComparisonKey(checkupId) })` al
+   `onSuccess` de `useAddCheckupTime`; el resto de invalidaciones de C8 no cambia.
+6. **Correcciones de la revisión (`/review`), sin cambio de comportamiento del
+   contrato:**
+   - `national-reference-page.tsx`: el botón "Borrar" de celda usaba `text-danger`
+     (par no certificado en `docs/design/contrast.json`, contraste 3.25:1); ahora
+     usa `text-danger-text` (certificado 4.5).
+   - `projections-panel.tsx`: todos los estados se envuelven ahora en un
+     contenedor `data-testid="projections-panel"` (testid vinculante de C10 que
+     faltaba; se utiliza `display: contents` para no alterar el layout).
+   - `time-form.tsx` y `reference-form.tsx`: la regla `timeSeconds > 0`
+     (`@DecimalMin("0.0", inclusive = false)`, doc 06) se replica ahora en
+     cliente (antes el jsdoc la documentaba pero no se verificaba).
+   - `athlete-checkups-page.tsx`: la pre-validación de duplicado del alta usa una
+     consulta aparte SIN filtro (`useAthleteCheckups(athleteId, {}, formOpen)`) en
+     lugar de la lista filtrada activa — con un filtro año/mes activo el período
+     duplicado quedaba oculto y el falso negativo degradaba al 409 residual.

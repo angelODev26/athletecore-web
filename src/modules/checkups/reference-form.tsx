@@ -103,8 +103,11 @@ export function validateReferenceLocally(values: Pick<ReferenceFormValues, "dist
     errors.position = "La posición debe estar entre 1 y 3";
   }
 
-  if (parseTimeToSeconds(values.time) === null) {
+  const timeSeconds = parseTimeToSeconds(values.time);
+  if (timeSeconds === null) {
     errors.time = `Formato esperado ${TIME_INPUT_PLACEHOLDER} (ej. 01:03.300)`;
+  } else if (timeSeconds <= 0) {
+    errors.time = "El tiempo debe ser mayor que 0";
   }
 
   return errors;

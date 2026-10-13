@@ -92,10 +92,15 @@ export async function fetchAthleteCheckups(
   );
 }
 
-export function useAthleteCheckups(athleteId: number, filters: { year?: number; month?: number } = {}) {
+export function useAthleteCheckups(
+  athleteId: number,
+  filters: { year?: number; month?: number } = {},
+  enabled = true,
+) {
   return useQuery({
     queryKey: athleteCheckupsKey(athleteId, filters.year, filters.month),
     queryFn: () => fetchAthleteCheckups(athleteId, filters),
+    enabled,
   });
 }
 
@@ -169,6 +174,10 @@ export function useAddCheckupTime(checkupId: number) {
       apiFetch<unknown>(CHECKUP_TIMES_RESOURCE(checkupId), { method: "POST", body }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: checkupDetailKey(checkupId) });
+      // Enmienda a C8: si el usuario ya lanzó la comparación (query activa y lazy),
+      // tras agregar un tiempo el panel debe refetchearse — sin este invalidate la
+      // comparación queda stale para el resto de la sesión de la página.
+      void queryClient.invalidateQueries({ queryKey: checkupComparisonKey(checkupId) });
     },
   });
 }
