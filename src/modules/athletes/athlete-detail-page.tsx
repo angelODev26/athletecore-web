@@ -186,6 +186,9 @@ export function AthleteDetailPage() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline" data-testid="athlete-checkups-link">
+                <Link to={`/athletes/${athlete.id}/chequeos`}>Chequeos</Link>
+              </Button>
               <Button asChild variant="outline" data-testid="athlete-edit-link">
                 <Link to={`/athletes/${athlete.id}/editar`}>Editar</Link>
               </Button>

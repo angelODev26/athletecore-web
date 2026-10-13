@@ -8,7 +8,9 @@ import { AthleteEditPage } from "@/modules/athletes/athlete-edit-page";
 import { AthletesListPage } from "@/modules/athletes/athletes-list-page";
 import { LoginPage } from "@/modules/auth/login-page";
 import { RegisterPage } from "@/modules/auth/register-page";
-import { CheckupsPage } from "@/modules/checkups/checkups-page";
+import { AthleteCheckupsPage } from "@/modules/checkups/athlete-checkups-page";
+import { CheckupDetailPage } from "@/modules/checkups/checkup-detail-page";
+import { NationalReferencePage } from "@/modules/checkups/national-reference-page";
 import { DashboardPage } from "@/modules/dashboard/dashboard-page";
 import { ReportsPage } from "@/modules/reports/reports-page";
 import { AlertsPage } from "@/modules/training/alerts-page";
@@ -48,6 +50,8 @@ export const router = createBrowserRouter([
       { path: "athletes/nuevo", element: <AthleteCreatePage /> },
       { path: "athletes/:id", element: <AthleteDetailPage /> },
       { path: "athletes/:id/editar", element: <AthleteEditPage /> },
+      { path: "athletes/:id/chequeos", element: <AthleteCheckupsPage /> },
+      { path: "athletes/:id/chequeos/:checkupId", element: <CheckupDetailPage /> },
       {
         path: "training",
         element: (
@@ -80,7 +84,7 @@ export const router = createBrowserRouter([
           </RequireRoles>
         ),
       },
-      { path: "checkups", element: <CheckupsPage /> },
+      { path: "tabla-nacional", element: <RequireRoles roles={["ADMIN"]}><NationalReferencePage /></RequireRoles> },
       { path: "reports", element: <ReportsPage /> },
     ],
   },

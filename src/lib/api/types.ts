@@ -204,3 +204,103 @@ export interface AttendanceAlertResponse {
   consecutiveAbsenceCount: number;
   lastAbsenceDate: string;
 }
+
+/*
+ * Chequeos (contrato docs/backend-contract/06). DTOs exactos del design.md de
+ * `integrar-checkups`; si el back difiere, gana el código del back.
+ * Regla transversal: el front nunca formatea tiempos (usa `*Formatted` tal cual)
+ * ni calcula clasificaciones.
+ */
+
+export type SwimmingStyle = "LIBRE" | "ESPALDA" | "BRAZA" | "MARIPOSA" | "COMBINADO";
+export type CheckupCategory = "INFANTIL" | "JUVENIL" | "MAYOR";
+export type Classification =
+  | "POR_ENCIMA_DEL_PODIO"
+  | "CERCANO_A_MEDALLERIA"
+  | "FUERA_DE_RANGO";
+
+export interface CheckupResponse {
+  id: number;
+  athleteId: number;
+  year: number;
+  month: number;
+  category: string; // valores del enum; string para tolerar extensión sin migración (doc 06 §1)
+  notes: string | null;
+  createdAt: string; // Instant ISO-8601 UTC ("2026-03-05T10:15:00Z")
+  updatedAt: string;
+  active: boolean;
+}
+
+export interface CheckupTimeResponse {
+  id: number;
+  checkupId: number;
+  style: string;
+  distance: number;
+  timeSeconds: number; // BigDecimal llega como JSON number (doc 08 §4)
+  timeFormatted: string; // "mm:ss.fff" o "hh:mm:ss.fff" — usar tal cual
+}
+
+export interface CheckupDetailResponse extends CheckupResponse {
+  times: CheckupTimeResponse[];
+}
+
+export interface CreateCheckupRequest {
+  athleteId: number;
+  year: number; // 1900–2100
+  month: number; // 1–12
+  category: CheckupCategory;
+  notes?: string;
+}
+
+export interface AddCheckupTimeRequest {
+  style: SwimmingStyle;
+  distance: number; // entero >= 1
+  timeSeconds: number; // > 0
+}
+
+export interface PositionComparison {
+  position: number; // 1=oro, 2=plata, 3=bronce
+  referenceTimeSeconds: number;
+  referenceTimeFormatted: string;
+  absoluteDiffSeconds: number; // negativo = prueba más rápida
+  absoluteDiffFormatted: string; // con signo explícito ("+00:05.250")
+  relativeDiffPercent: number;
+}
+
+export interface TimeComparisonResponse {
+  style: string;
+  distance: number;
+  category: string;
+  trialTimeSeconds: number;
+  trialTimeFormatted: string;
+  positions: PositionComparison[];
+}
+
+export interface MedalProjectionResponse {
+  style: string;
+  distance: number;
+  category: string;
+  classification: Classification;
+  timeSeconds: number;
+  timeFormatted: string;
+  diffVsBronzeSeconds: number; // negativo = mejor que el bronce
+  diffVsBronzeFormatted: string;
+}
+
+export interface NationalReferenceTimeListItemResponse {
+  id: number;
+  style: string;
+  distance: number;
+  category: string;
+  position: number; // 1..3
+  timeSeconds: number;
+  timeFormatted: string;
+}
+
+export interface NationalReferenceTimeRequest {
+  style: SwimmingStyle;
+  distance: number; // entero >= 1
+  category: CheckupCategory;
+  position: number; // 1–3
+  timeSeconds: number; // > 0
+}

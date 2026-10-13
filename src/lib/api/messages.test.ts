@@ -41,6 +41,20 @@ describe("toUserFacingMessage", () => {
     const error = new ApiError(500, { status: 500, error: "", message: "" });
     expect(toUserFacingMessage(error)).toBe("Los datos no son válidos. Revisa los campos e inténtalo de nuevo.");
   });
+
+  it("traduce los 3 duplicados del módulo chequeos (doc 06)", () => {
+    expect(
+      toUserFacingMessage(apiError(409, "Checkup with athleteId/year/month/category already exists")),
+    ).toBe("Ya existe un chequeo de ese año y mes para esta categoría");
+    expect(
+      toUserFacingMessage(apiError(409, "CheckupTime with checkupId/style/distance already exists")),
+    ).toBe("Ya existe un tiempo registrado para ese estilo y distancia en este chequeo");
+    expect(
+      toUserFacingMessage(
+        apiError(409, "NationalReferenceTime with style/distance/category/position already exists"),
+      ),
+    ).toBe("Ya existe una referencia para ese estilo, distancia, categoría y posición");
+  });
 });
 
 describe("getDuplicateField (409 del registro, doc 03 §3)", () => {

@@ -101,3 +101,88 @@ describe("AppShell — wiring de setForbiddenHandler (C10)", () => {
     expect(useSessionStore.getState().tokens?.access).toBe("test-token");
   });
 });
+
+/*
+ * Navegación por rol (integrar-checkups): el placeholder "Chequeos" desaparece del
+ * nav (los chequeos viven en la ficha del atleta) y "Tabla nacional" solo es
+ * visible para ADMIN (C1/C3).
+ */
+describe("AppShell — navegación del módulo de chequeos", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function renderNav() {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div data-testid="home-page">Inicio</div>} />
+            <Route path="tabla-nacional" element={<div data-testid="national-page">Tabla</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  function navLinks() {
+    return Array.from(document.querySelectorAll("nav a")).map((link) => link.textContent);
+  }
+
+  it("el nav ya no contiene la sección placeholder 'Chequeos'", () => {
+    const payload = { sub: "admin", roles: ["ROLE_ADMIN"], exp: Math.floor(Date.now() / 1000) + 3600 };
+    useSessionStore.setState({
+      tokens: { access: `.${btoa(JSON.stringify(payload)).replace(/=+$/, "")}.` },
+      expiresAt: Date.now() + 3_600_000,
+    });
+
+    renderNav();
+
+    expect(navLinks()).not.toContain("Chequeos");
+    expect(navLinks()).toContain("Deportistas");
+  });
+
+  it("ADMIN ve 'Tabla nacional' y navega a /tabla-nacional", async () => {
+    const payload = { sub: "admin", roles: ["ROLE_ADMIN"], exp: Math.floor(Date.now() / 1000) + 3600 };
+    useSessionStore.setState({
+      tokens: { access: `.${btoa(JSON.stringify(payload)).replace(/=+$/, "")}.` },
+      expiresAt: Date.now() + 3_600_000,
+    });
+
+    renderNav();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("link", { name: "Tabla nacional" }));
+
+    await waitFor(() => expect(screen.getByTestId("national-page")).toBeInTheDocument());
+  });
+
+  it("COACH y USER no ven 'Tabla nacional' en el nav", () => {
+    const payload = { sub: "coach", roles: ["ROLE_COACH"], exp: Math.floor(Date.now() / 1000) + 3600 };
+    useSessionStore.setState({
+      tokens: { access: `.${btoa(JSON.stringify(payload)).replace(/=+$/, "")}.` },
+      expiresAt: Date.now() + 3_600_000,
+    });
+
+    renderNav();
+
+    expect(navLinks()).not.toContain("Tabla nacional");
+
+    cleanup();
+
+    const userPayload = { sub: "user", roles: ["ROLE_USER"], exp: Math.floor(Date.now() / 1000) + 3600 };
+    useSessionStore.setState({
+      tokens: { access: `.${btoa(JSON.stringify(userPayload)).replace(/=+$/, "")}.` },
+      expiresAt: Date.now() + 3_600_000,
+    });
+
+    renderNav();
+
+    expect(navLinks()).not.toContain("Tabla nacional");
+  });
+});

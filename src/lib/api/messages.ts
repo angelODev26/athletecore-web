@@ -11,6 +11,14 @@ const KNOWN_BACKEND_MESSAGES: Record<string, string> = {
     "El nombre de usuario debe tener entre 3 y 50 caracteres",
   "Email should be valid": "Introduce un email válido",
   "Password must be at least 6 characters": "La contraseña debe tener al menos 6 caracteres",
+  // Duplicados del módulo chequeos (contrato doc 06, emitidos por
+  // `DuplicateResourceException(String, String)` en inglés)
+  "Checkup with athleteId/year/month/category already exists":
+    "Ya existe un chequeo de ese año y mes para esta categoría",
+  "CheckupTime with checkupId/style/distance already exists":
+    "Ya existe un tiempo registrado para ese estilo y distancia en este chequeo",
+  "NationalReferenceTime with style/distance/category/position already exists":
+    "Ya existe una referencia para ese estilo, distancia, categoría y posición",
 };
 
 // Mensajes del contrato que ya llegan en español del back y son seguros de
