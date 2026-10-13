@@ -111,7 +111,7 @@ el de arriba.
 
 - [x] Todos los ítems C1–C10 resueltos y marcados; desviaciones anotadas abajo.
 - [x] `npm run test`, `npm run build`, `npm run design:check` en verde.
-- [ ] Commit/push/merge lo decide el humano.
+- [x] Commit/push/merge lo decide el humano.
 
 ## Desviaciones registradas
 

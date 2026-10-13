@@ -81,7 +81,7 @@
       pase de lista y alertas; como ADMIN y como COACH (acciones por rol visibles/ocultas).
 - [x] 6.3 `npm run test`, `npm run build`, `npm run design:check` en verde.
 - [x] 6.4 Actualizar `AGENTS.md` (sección Estructura, módulo training).
-- [ ] 6.5 Commit/push/merge lo decide el humano; el change se archiva después.
+- [x] 6.5 Commit/push/merge lo decide el humano; el change se archiva después.
 
 ## Desviaciones registradas
 
