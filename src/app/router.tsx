@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, type RouteObject } from "react-router-dom";
 
 import { AppShell } from "@/app/app-shell";
 import { RequireAuth, RequireGuest, RequireRoles } from "@/app/guards";
@@ -12,14 +12,22 @@ import { AthleteCheckupsPage } from "@/modules/checkups/athlete-checkups-page";
 import { CheckupDetailPage } from "@/modules/checkups/checkup-detail-page";
 import { NationalReferencePage } from "@/modules/checkups/national-reference-page";
 import { DashboardPage } from "@/modules/dashboard/dashboard-page";
-import { ReportsPage } from "@/modules/reports/reports-page";
+import { AthleteReportPage } from "@/modules/reports/athlete-report-page";
+import { ReportDetailPage } from "@/modules/reports/report-detail-page";
+import { ReportSchedulesPage } from "@/modules/reports/report-schedules-page";
+import { ReportsLibraryPage } from "@/modules/reports/reports-library-page";
+import { TeamReportPage } from "@/modules/reports/team-report-page";
 import { AlertsPage } from "@/modules/training/alerts-page";
 import { PlanDetailPage } from "@/modules/training/plan-detail-page";
 import { PlansListPage } from "@/modules/training/plans-list-page";
 import { SessionDetailPage } from "@/modules/training/session-detail-page";
 import { ErrorState } from "@/shared/components/states";
 
-export const router = createBrowserRouter([
+/*
+ * Tabla de rutas de la app. Se exporta aparte del `router` de navegador para que los
+ * tests puedan montarla con `createMemoryRouter` (mismo grafo, sin `window.history`).
+ */
+export const appRoutes: RouteObject[] = [
   {
     path: "/login",
     element: (
@@ -52,6 +60,7 @@ export const router = createBrowserRouter([
       { path: "athletes/:id/editar", element: <AthleteEditPage /> },
       { path: "athletes/:id/chequeos", element: <AthleteCheckupsPage /> },
       { path: "athletes/:id/chequeos/:checkupId", element: <CheckupDetailPage /> },
+      { path: "athletes/:id/report", element: <AthleteReportPage /> },
       {
         path: "training",
         element: (
@@ -85,8 +94,27 @@ export const router = createBrowserRouter([
         ),
       },
       { path: "tabla-nacional", element: <RequireRoles roles={["ADMIN"]}><NationalReferencePage /></RequireRoles> },
-      { path: "reports", element: <ReportsPage /> },
+      /*
+       * Reportes (C1/C9): la sección vive bajo `/reports` con sub-navegación interna.
+       * Las rutas ESTÁTICAS (`equipo`, `programaciones`) se declaran ANTES de la
+       * dinámica `:reportId` para que se resuelvan de forma inequívoca en cualquier
+       * versión del router (React Router v7 además puntúa por especificidad, no por
+       * orden). `/reports/programaciones` es la única con guard de rol.
+       */
+      { path: "reports", element: <ReportsLibraryPage /> },
+      { path: "reports/equipo", element: <TeamReportPage /> },
+      {
+        path: "reports/programaciones",
+        element: (
+          <RequireRoles roles={["ADMIN"]}>
+            <ReportSchedulesPage />
+          </RequireRoles>
+        ),
+      },
+      { path: "reports/:reportId", element: <ReportDetailPage /> },
     ],
   },
   { path: "*", element: <Navigate to="/" replace /> },
-]);
+];
+
+export const router = createBrowserRouter(appRoutes);

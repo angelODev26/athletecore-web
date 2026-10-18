@@ -19,6 +19,13 @@ SPA en **React 19 + TypeScript + Vite 8**, único cliente de **AthleteCore API**
 - **D3**: acknowledge de alertas es local (store `(athleteId, lastAbsenceDate)`); la UI nunca promete persistencia.
 - **D4**: sin catálogo de disciplinas en el back — la UI muestra `disciplineId` como dato técnico hasta que exista `GET /disciplines` (prerrequisito registrado).
 - **D5**: foto de perfil = input de URL, sin upload.
+- **D6**: las programaciones de reportes envían `timezone` (IANA) porque el contrato lo
+  exige, pero **el back todavía no lo honra**: `ReportScheduleService.computeNextRun`
+  calcula la próxima ejecución con `clock.getZone()` (zona del servidor). La UI muestra
+  la fecha del servidor tal cual y su copy no promete la zona elegida. Prerrequisito
+  registrado: `computeNextRun` debe usar el `timezone` persistido de la programación.
+  Nota relacionada (mismo servicio): el back calcula `nextRunAt` sin mirar `active`, así
+  que una programación pausada trae fecha futura y la UI debe marcarla como "Pausada".
 
 ## Mapa de agentes especializados
 
@@ -50,9 +57,11 @@ All UI work follows `DESIGN.md` (tokens in `docs/design/tokens.json`). Never har
 
 ## Estructura (post `integrar-autenticacion`)
 
-- `src/components/ui/` — componentes del registry shadcn (botón, input, label, card, alert, form, dialog, select, alert-dialog, …). NO se editan a mano; se gestionan vía MCP shadcn. El checker `check-hardcoded-styles.mjs` los excluye (valores arbitrarios del registry).
+- `src/components/ui/` — componentes del registry shadcn (botón, input, label, card, alert, form, dialog, select, alert-dialog, tabs, switch, …). NO se editan a mano; se gestionan vía MCP shadcn. El checker `check-hardcoded-styles.mjs` los excluye (valores arbitrarios del registry).
 - `src/lib/auth/session-store.ts` — sesión persistida (`localStorage`, clave `athletecore.session`) con `expiresAt` + guard `RequireGuest`; expulsión proactiva por claim `exp`.
 - `src/modules/auth/` — login, registro (`/registro`), `auth-api.ts` (mutaciones contra `POST /auth/login` y `POST /users`).
 - `src/modules/training/` — entrenamientos (solo ADMIN/COACH): lista de planes con paginación client-side (`plans-list-page`), árbol del plan (`plan-detail-page`), formularios en dialog (`plan-form`, `cycle-form` con pre-validación de reglas 400, `session-form`), detalle de sesión con pase de lista upsert (`session-detail-page` + `attendance-grid`), bandeja de alertas con dismiss 100 % local (`alerts-page` + `alerts-ack-store`, clave `athletecore.alerts.ack`), capa de datos (`training-api.ts` con `fetchAllAthletes()`), formatos T10 (`format.ts`).
 - `src/modules/checkups/` — chequeos mensuales: pestaña en la ficha del atleta (`/athletes/:id/chequeos`, `athlete-checkups-page` con filtros año/mes server-side + `projections-panel`), detalle con tiempos embebidos y comparación lazy (`/athletes/:id/chequeos/:checkupId`, `checkup-detail-page` + `time-form` + `comparison-panel`), borrado "corregir = borrar y recrear" (deuda T5, sin PUT), matriz ADMIN de tabla nacional (`/tabla-nacional`, `national-reference-page` + `reference-form`, agrupación client-side por `(style, distance, category)`), capa de datos (`checkups-api.ts`, comparación/proyección con 409 → estado "referencia incompleta"), parser de input `mm:ss.fff` (`format.ts` — el front nunca formatea tiempos).
+- `src/modules/reports/` — reportes (contrato 07): dashboard del atleta en la ficha (`/athletes/:id/report`, `athlete-report-page` con `evolution-chart` Chart.js, `attendance-card` y `report-projections`), dashboard general `/` (`src/modules/dashboard/dashboard-page.tsx`: 3 KPIs agregadas en cliente del team report, distribución de clasificaciones y listas de reportes recientes/próximas ejecuciones), reporte de equipo (`/reports/equipo`, `team-report-page` con filtro de categoría server-side y ranking por prueba), biblioteca PDF (`/reports`, `reports-library-page` + `report-form` con generación síncrona y lectura del `status` de la 201; detalle `/reports/:reportId` con descarga por Blob y borrado), programaciones solo ADMIN (`/reports/programaciones`, `report-schedules-page` + `schedule-form` con presets traducidos a cron de 6 campos), sub-navegación `reports-tabs` (tab Programaciones oculta a no-ADMIN), capa de datos (`reports-api.ts`, `useTeamReport` con `staleTime` 5 min y `downloadReportExport` imperativa sobre `apiFetchBlob` de `src/lib/api/http.ts`), presets/etiquetas de presentación (`format.ts`) e infra de gráficas (`chart-theme.ts`: registro tree-shaken de Chart.js + tokens por `getComputedStyle`, cero literales).
+- `src/shared/format/dates.ts` — `formatInstantDate`/`formatInstantDateTime` (Intl es-ES) y `humanFileSize` (KB/MB): SOLO presentación de timestamps y metadatos de archivos; los tiempos de nado siguen siendo siempre el `*Formatted` del servidor.
 - `components.json` — shadcn CLI (aliases `@/…`). Nota: el CLI v4.21 tuvo bugs de resolución de alias en este repo; si vuelve a crear un directorio literal `@/`, mover archivos a `src/` y borrarlo.

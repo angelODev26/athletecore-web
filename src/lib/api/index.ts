@@ -1,6 +1,12 @@
 export { API_BASE_URL, API_PREFIX } from "./env";
 export { ApiError, isApiError, isForbiddenError, type ErrorResponse } from "./errors";
-export { apiFetch, setForbiddenHandler, type ApiRequestOptions } from "./http";
+export {
+  apiFetch,
+  apiFetchBlob,
+  setForbiddenHandler,
+  type ApiRequestOptions,
+  type BlobResponse,
+} from "./http";
 export { toPageModel, type PageModel } from "./pagination";
 export { moduleQueryKey, queryClient } from "./query-client";
 export { getDuplicateField, toUserFacingMessage } from "./messages";
@@ -9,28 +15,43 @@ export type {
   AttendanceAlertResponse,
   AttendanceRecord,
   AttendanceStatus,
+  AttendanceSummary,
   AthleteCreateRequest,
   AthleteProfileResponse,
   AthleteProfileUpsertRequest,
   AthleteResponse,
   AthleteUpdateRequest,
   CreateCycleRequest,
+  CreateReportScheduleRequest,
   CreateSessionRequest,
   CreateTrainingPlanRequest,
   CycleType,
+  GenerateReportRequest,
+  IndividualReportResponse,
   JwtClaims,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
   RegisterAttendanceRequest,
+  ReportDetailResponse,
+  ReportExportResponse,
+  ReportResponse,
+  ReportScheduleResponse,
+  ReportStatus,
+  ReportType,
   Role,
   SessionDetailResponse,
   SessionResponse,
   SessionStatus,
   SportResponse,
+  TeamAthleteEntry,
+  TeamReportEntry,
+  TeamReportResponse,
+  TimeEvolutionEntry,
   TrainingCycleNode,
   TrainingPlanDetailResponse,
   TrainingPlanResponse,
+  UpdateReportScheduleRequest,
   UpdateSessionRequest,
   UserResponse,
 } from "./types";

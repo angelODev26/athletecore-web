@@ -170,6 +170,19 @@ describe("AthleteDetailPage", () => {
     expect(screen.getByText("Disciplinas (IDs): 10, 11")).toBeInTheDocument();
   });
 
+  it("expone el enlace al reporte del deportista (C11)", async () => {
+    mockBackend({ profile: "404", sportIds: [1] });
+    const { wrapper } = renderDetail();
+    render(<DetailRoutes />, { wrapper });
+
+    await screen.findByText("Michael Phelps");
+
+    expect(screen.getByTestId("athlete-report-link")).toHaveAttribute(
+      "href",
+      "/athletes/7/report",
+    );
+  });
+
   it("borrado: cancelar el AlertDialog no llama al back", async () => {
     const user = userEvent.setup();
     mockBackend({ profile: "404", sportIds: [1] });

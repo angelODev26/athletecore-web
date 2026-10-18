@@ -189,6 +189,9 @@ export function AthleteDetailPage() {
               <Button asChild variant="outline" data-testid="athlete-checkups-link">
                 <Link to={`/athletes/${athlete.id}/chequeos`}>Chequeos</Link>
               </Button>
+              <Button asChild variant="outline" data-testid="athlete-report-link">
+                <Link to={`/athletes/${athlete.id}/report`}>Reporte</Link>
+              </Button>
               <Button asChild variant="outline" data-testid="athlete-edit-link">
                 <Link to={`/athletes/${athlete.id}/editar`}>Editar</Link>
               </Button>

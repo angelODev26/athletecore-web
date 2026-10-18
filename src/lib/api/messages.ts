@@ -28,6 +28,9 @@ const SPANISH_CONTRACT_MESSAGES = new Set([
   "La contraseña es obligatoria",
   "Las contraseñas no coinciden",
   "Error de validación",
+  // Regla de servicio del back en reportes (doc 07 §3): la pre-validación local la
+  // evita, pero llega en español y es segura de mostrar tal cual.
+  "El reporte individual requiere un athleteId",
 ]);
 
 const SAFE_FALLBACK_VALIDATION = "Los datos no son válidos. Revisa los campos e inténtalo de nuevo.";

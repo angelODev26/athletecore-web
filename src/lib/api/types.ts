@@ -304,3 +304,138 @@ export interface NationalReferenceTimeRequest {
   position: number; // 1–3
   timeSeconds: number; // > 0
 }
+
+/*
+ * Reportes (contrato docs/backend-contract/07). DTOs exactos del design.md de
+ * `integrar-reportes`, verificados contra `report/dto/*.java`; si el back difiere,
+ * gana el código del back. Reutilizan `MedalProjectionResponse` y `Classification`
+ * de chequeos. Regla transversal: el front nunca formatea tiempos ni calcula
+ * clasificaciones/rachas — todo valor visible es un `*Formatted` del servidor.
+ */
+
+export type ReportType = "INDIVIDUAL" | "GENERAL";
+export type ReportStatus = "PENDING" | "GENERATED" | "FAILED";
+
+export interface TimeEvolutionEntry {
+  year: number;
+  month: number;
+  style: string; // valores de SwimmingStyle; string para tolerar extensión (doc 06 §1)
+  distance: number;
+  timeSeconds: number; // BigDecimal → JSON number (doc 08 §4)
+  timeFormatted: string; // SIEMPRE del servidor
+}
+
+export interface AttendanceSummary {
+  totalSessions: number;
+  presentCount: number;
+  absentCount: number;
+  justifiedCount: number;
+  currentAbsenceStreak: number; // racha calculada por el servidor — nunca local
+}
+
+export interface IndividualReportResponse {
+  athleteId: number;
+  athleteFullName: string;
+  timeEvolution: TimeEvolutionEntry[];
+  attendance: AttendanceSummary;
+  projections: MedalProjectionResponse[]; // reusa el type de chequeos
+}
+
+export interface TeamAthleteEntry {
+  athleteId: number;
+  athleteFullName: string;
+  bestTimeSeconds: number;
+  bestTimeFormatted: string;
+  classification: Classification;
+  diffVsBronzeSeconds: number;
+  diffVsBronzeFormatted: string;
+}
+
+export interface TeamReportEntry {
+  style: string;
+  distance: number;
+  category: string;
+  athleteCount: number;
+  athletes: TeamAthleteEntry[];
+}
+
+export interface TeamReportResponse {
+  category: string | null; // null = sin filtro (todas)
+  entries: TeamReportEntry[];
+}
+
+export interface GenerateReportRequest {
+  reportType: ReportType; // @NotNull
+  athleteId?: number | null; // requerido si INDIVIDUAL (regla de servicio, 400)
+  category?: string | null;
+  year?: number | null;
+  month?: number | null;
+  title: string; // @NotBlank, @Size(max = 200)
+}
+
+export interface ReportResponse {
+  id: number;
+  reportType: ReportType;
+  athleteId: number | null;
+  category: string | null;
+  year: number | null;
+  month: number | null;
+  title: string;
+  status: ReportStatus;
+  errorMessage: string | null; // visible cuando status === "FAILED"
+  createdAt: string; // Instant ISO-8601 UTC
+  updatedAt: string;
+  // No nullable: `ReportResponse.java` lo declara `boolean` primitivo (asimétrico con el DTO de schedules).
+  active: boolean;
+}
+
+export interface ReportExportResponse {
+  id: number;
+  reportId: number;
+  format: string; // "PDF"
+  fileName: string;
+  fileSizeBytes: number;
+  contentType: string; // "application/pdf"
+  createdAt: string;
+}
+
+/*
+ * El detalle NO expone `active`: `ReportDetailResponse.java` del back omite el campo
+ * (un reporte borrado responde 404, así que `active` no tiene uso en el detalle).
+ * Regla del proyecto: si el doc y el código difieren, gana el código.
+ */
+export interface ReportDetailResponse extends Omit<ReportResponse, "active"> {
+  exports: ReportExportResponse[];
+}
+
+export interface CreateReportScheduleRequest {
+  reportType: ReportType; // @NotNull
+  athleteId?: number | null;
+  category?: string | null;
+  cronExpression: string; // @NotBlank @Size(100) — Spring 6 campos, construido por presets
+  timezone?: string | null; // @Size(63), nombre IANA
+  active?: boolean | null;
+}
+
+// El update EXIGE todos los campos (PUT completo); misma forma que create.
+export type UpdateReportScheduleRequest = CreateReportScheduleRequest;
+
+export interface ReportScheduleResponse {
+  id: number;
+  reportType: ReportType;
+  athleteId: number | null;
+  category: string | null;
+  cronExpression: string;
+  timezone: string | null;
+  /*
+   * Nullable en el wire: `ReportScheduleResponse.java` lo declara `Boolean` (no primitivo).
+   * La entidad usa `Boolean.TRUE` por defecto y el scheduler solo ejecuta las filas con
+   * `active = TRUE` (`ReportScheduleRepository.findDueActiveSchedules`), así que un `null`
+   * nunca significa activa: la UI trata `active !== true` como no activa.
+   */
+  active: boolean | null;
+  lastRunAt: string | null; // precalculados por el servidor — solo mostrar
+  nextRunAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

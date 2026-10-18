@@ -1,5 +1,5 @@
 {
-  "$description": "Contrast pairs enforced by scripts/check-contrast.mjs. fg/bg are paths under color.semantic. min = WCAG 2.x ratio (4.5 text, 3 UI components). A pair absent here is NOT an allowed combination.",
+  "$description": "Contrast pairs enforced by scripts/check-contrast.mjs. fg/bg are paths under color.semantic. min = WCAG 2.x ratio (4.5 text, 3 UI components). A pair absent here is NOT an allowed combination. Ratios are symmetric, so a pair listed in one direction authorizes the inverse combination as well; pairs below are listed explicitly when a component boundary (not text) is the thing being checked (see the switch thumb/track entries).",
   "pairs": [
     { "fg": "text.primary", "bg": "surface.bg", "min": 4.5 },
     { "fg": "text.primary", "bg": "surface.sidebar", "min": 4.5 },
@@ -38,8 +38,11 @@
     { "fg": "status.danger-text", "bg": "status.danger-subtle", "min": 4.5 },
     { "fg": "border.input", "bg": "surface.bg", "min": 3 },
     { "fg": "border.input", "bg": "surface.card", "min": 3 },
+    { "fg": "border.input", "bg": "surface.elevated", "min": 3, "note": "Control boundary inside modals/popovers (form borders, switch off track)" },
     { "fg": "action.primary", "bg": "surface.bg", "min": 3 },
     { "fg": "action.primary", "bg": "surface.card", "min": 3 },
+    { "fg": "surface.bg", "bg": "action.primary", "min": 3, "note": "Switch thumb on the checked track (boundary, not text)" },
+    { "fg": "surface.bg", "bg": "border.input", "min": 3, "note": "Switch thumb on the unchecked track (boundary, not text)" },
     { "fg": "data.series-1", "bg": "surface.bg", "min": 3 },
     { "fg": "data.series-1", "bg": "surface.card", "min": 3 },
     { "fg": "data.series-2", "bg": "surface.bg", "min": 3 },

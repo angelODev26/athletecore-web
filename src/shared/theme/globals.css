@@ -12,6 +12,56 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+ * Puente de atributos de las primitivas Radix (radix-ui@1.8 → primitivas 1.2/1.4.x).
+ *
+ * Causa raíz: el registry de shadcn v4 se escribe contra las variantes de estado que
+ * define el `globals.css` de su propio template. Este tema es una escritura a mano que
+ * nunca portó ese tema base, así que Tailwind compila cada una de esas clases con su
+ * variante GENÉRICA de atributo — `data-open:` → `[data-open]` — y el elemento nunca
+ * lleva ese atributo. La clase no falla el build ni avisa: queda INERTE.
+ *
+ * Qué emite realmente cada primitiva instalada (grep sobre
+ * node_modules/@radix-ui/<pkg>/dist/index.mjs):
+ *   data-state        → todas (accordion, alert-dialog, checkbox, dialog, menus,
+ *                       popover, select, switch, tabs, tooltip…)
+ *   data-disabled     → accordion, checkbox, collapsible, menus, select, slider,
+ *                       switch, tabs, toggle…
+ *   data-placeholder  → select
+ *   data-orientation  → tabs, accordion, navigation-menu
+ *   data-active       → SOLO navigation-menu (NO en Tabs)
+ *   data-open / data-closed / data-horizontal / data-vertical / data-checked /
+ *   data-unchecked    → NINGUNA
+ *
+ * `data-disabled:` y `data-placeholder:` no se puentean a propósito: Radix sí los
+ * emite y la variante genérica de Tailwind ya matchea (visible en el CSS construido).
+ * El resto se mapea aquí. Cada selector conserva además el literal que nombra el
+ * registry, para no romperse si una versión futura de la primitiva lo emite.
+ *
+ * Sin este puente quedaban inertes (medido en el CSS construido):
+ *   - 13 `data-open:` / 13 `data-closed:` de dialog/alert-dialog/select: ningún
+ *     overlay, modal ni dropdown entraba o salía con animación;
+ *   - 11 `data-active:` de tabs.tsx: sin fill `surface.bg` en el tab activo, sin
+ *     `shadow-sm` del variant `default` y sin subrayado del variant `line` que
+ *     DESIGN.md §6 exige;
+ *   - 4 `group-data-horizontal/tabs:` / `group-data-vertical/tabs:` de tabs.tsx: sin
+ *     layout por orientación (el `after:` del subrayado no se posicionaba);
+ *   - `data-checked:` / `data-unchecked:` de switch/checkbox: el Switch no pintaba
+ *     track ni movía el thumb (control sin indicador de estado) y el Checkbox
+ *     marcado se quedaba sin relleno.
+ *
+ * Nota: `src/modules/reports/reports-tabs.tsx` pasa `data-active` a mano como
+ * workaround de este hueco; con el puente es redundante (Radix emite
+ * `data-state="active"`), pero el literal se conserva justamente para no romperlo.
+ */
+@custom-variant data-open (&:is([data-state="open"], [data-open]));
+@custom-variant data-closed (&:is([data-state="closed"], [data-closed]));
+@custom-variant data-active (&:is([data-state="active"], [data-active]));
+@custom-variant data-horizontal (&:is([data-orientation="horizontal"], [data-horizontal]));
+@custom-variant data-vertical (&:is([data-orientation="vertical"], [data-vertical]));
+@custom-variant data-checked (&:is([data-state="checked"], [data-checked]));
+@custom-variant data-unchecked (&:is([data-state="unchecked"], [data-unchecked]));
+
+/*
  * Alias intermedios sin capa (unlayered): rompen la autorreferencia de las
  * entradas de @theme inline que comparten nombre con los tokens
  * (`--radius-control: var(--radius-control)` dependería del orden de capas).
