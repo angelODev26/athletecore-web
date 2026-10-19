@@ -186,3 +186,69 @@ describe("AppShell — navegación del módulo de chequeos", () => {
     expect(navLinks()).not.toContain("Tabla nacional");
   });
 });
+
+/*
+ * Navegación de usuarios (`gestion-usuarios` fase A, C1): "Usuarios" es visible
+ * solo para ADMIN y lleva a /usuarios (mismo patrón que "Tabla nacional").
+ */
+describe("AppShell — navegación del módulo de usuarios", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    cleanup();
+  });
+
+  function renderNav() {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<AppShell />}>
+            <Route index element={<div data-testid="home-page">Inicio</div>} />
+            <Route path="usuarios" element={<div data-testid="users-page-mock">Usuarios</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+  }
+
+  function navLinks() {
+    return Array.from(document.querySelectorAll("nav a")).map((link) => link.textContent);
+  }
+
+  function signIn(roles: string[]) {
+    const payload = {
+      sub: "staff",
+      roles: roles.map((role) => `ROLE_${role}`),
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    };
+    useSessionStore.setState({
+      tokens: { access: `.${btoa(JSON.stringify(payload)).replace(/=+$/, "")}.` },
+      expiresAt: Date.now() + 3_600_000,
+    });
+  }
+
+  it("ADMIN ve 'Usuarios' y navega a /usuarios", async () => {
+    signIn(["ADMIN"]);
+    renderNav();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("link", { name: "Usuarios" }));
+
+    await waitFor(() => expect(screen.getByTestId("users-page-mock")).toBeInTheDocument());
+  });
+
+  it("COACH y USER no ven 'Usuarios' en el nav", () => {
+    signIn(["COACH"]);
+    renderNav();
+    expect(navLinks()).not.toContain("Usuarios");
+
+    cleanup();
+
+    signIn(["USER"]);
+    renderNav();
+    expect(navLinks()).not.toContain("Usuarios");
+  });
+});

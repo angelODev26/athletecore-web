@@ -21,6 +21,7 @@ import { AlertsPage } from "@/modules/training/alerts-page";
 import { PlanDetailPage } from "@/modules/training/plan-detail-page";
 import { PlansListPage } from "@/modules/training/plans-list-page";
 import { SessionDetailPage } from "@/modules/training/session-detail-page";
+import { UsersPage } from "@/modules/users/users-page";
 import { ErrorState } from "@/shared/components/states";
 
 /*
@@ -94,6 +95,14 @@ export const appRoutes: RouteObject[] = [
         ),
       },
       { path: "tabla-nacional", element: <RequireRoles roles={["ADMIN"]}><NationalReferencePage /></RequireRoles> },
+      {
+        path: "usuarios",
+        element: (
+          <RequireRoles roles={["ADMIN"]}>
+            <UsersPage />
+          </RequireRoles>
+        ),
+      },
       /*
        * Reportes (C1/C9): la sección vive bajo `/reports` con sub-navegación interna.
        * Las rutas ESTÁTICAS (`equipo`, `programaciones`) se declaran ANTES de la

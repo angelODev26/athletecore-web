@@ -19,6 +19,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { to: "/athletes", label: "Deportistas" },
   { to: "/training", label: "Entrenamientos", roles: ["ADMIN", "COACH"] },
   { to: "/tabla-nacional", label: "Tabla nacional", roles: ["ADMIN"] },
+  { to: "/usuarios", label: "Usuarios", roles: ["ADMIN"] },
   { to: "/reports", label: "Reportes" },
 ];
 
