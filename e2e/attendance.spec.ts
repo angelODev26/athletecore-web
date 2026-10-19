@@ -1,7 +1,4 @@
-import { expect, test } from "@playwright/test";
-
 import {
-  CleanupRegistry,
   createAthlete,
   createPlanWithCycleAndSession,
   softDeleteAthlete,
@@ -9,6 +6,7 @@ import {
   softDeleteSession,
   type E2eApi,
 } from "./fixtures/api";
+import { expect, test } from "./fixtures/harness";
 import { openApp } from "./fixtures/session";
 
 /*
@@ -18,10 +16,9 @@ import { openApp } from "./fixtures/session";
  * tras RECARGAR la página ambos estados persisten (verifica el upsert, no el render).
  */
 
-test("las marcas de asistencia persisten tras recargar la página", async ({ page }) => {
+test("las marcas de asistencia persisten tras recargar la página", async ({ page, cleanup }) => {
   const token = await openApp(page, "ADMIN");
   const api: E2eApi = { request: page.request, token };
-  const cleanup = new CleanupRegistry();
 
   const athletePresent = await createAthlete(api, "asis-pres");
   const athleteAbsent = await createAthlete(api, "asis-aus");
@@ -51,6 +48,4 @@ test("las marcas de asistencia persisten tras recargar la página", async ({ pag
   await expect(page.getByTestId("attendance-grid")).toBeVisible();
   await expect(page.getByTestId(`attendance-row-${athletePresent.id}`)).toContainText("Presente");
   await expect(page.getByTestId(`attendance-row-${athleteAbsent.id}`)).toContainText("Ausente");
-
-  await cleanup.run();
 });

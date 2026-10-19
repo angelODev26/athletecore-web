@@ -78,6 +78,7 @@
 | T8 | No hay `/me`, ni logout, ni edición/password de usuarios | Sesión 100% basada en decodificar el JWT + `user` del login |
 | T9 | Reportes: lista filtrada en memoria | Cap de resultados en UI; refinar filtros antes de llamar |
 | T10 | Sin rate limiting ni brute-force en back | El front aplica sus propias mitigaciones de UX (bloqueo temporal del botón de login) |
+| T11 | Ensamblado de reportes en una sola transacción: `ReportGenerationService.generateReport` es `@Transactional` y el fallo de ensamblado (p. ej. `DuplicateResourceException` 409 desde `MedalProjectionService.getProjectionsForAthlete`, proxy anidado `@Transactional(readOnly = true)`) marca rollback-only — el `catch` que debería persistir FAILED nunca llega a commitear y el commit lanza `UnexpectedRollbackException` → **500**. Debería usar `REQUIRES_NEW` (o no ser transaccional) en el ensamblado | El estado FAILED (201 + `errorMessage`, contrato 07) es inalcanzable contra el back actual: la UI trata cualquier fallo de generación como error seguro del formulario (`report-form-error`) y no promete el badge "Fallido" |
 
 ---
 

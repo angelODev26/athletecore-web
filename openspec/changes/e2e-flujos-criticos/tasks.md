@@ -139,7 +139,8 @@
   `report-generation-error` (201 FAILED) queda cubierto por los tests unit del
   módulo. **Prerrequisito registrado**: `ReportGenerationService.generateReport`
   debería REQUIRES_NEW (o no transaccional) en el ensamblado para que el estado
-  FAILED sea alcanzable — deuda del back, doc 09.
+  FAILED sea alcanzable — deuda del back, **doc 09 T11** (registrada en la
+  corrección del review; antes solo se prometía sin existir).
 - 5.x: `athlete-detail-page` no tiene testid de contenedor; la aserción de la
   ficha usa `page.getByRole("main")` + el nombre único (testids solo donde existen).
 - Infra (nota para `design-system-keeper`): `scripts/check-hardcoded-styles.mjs`
@@ -155,12 +156,79 @@
   desde el guard: relativo `../../../e2e/fixtures/session.ts` + extensión `.ts`,
   permitida por `allowImportingTsExtensions`).
 
-### Resultado de la ejecución E2E (7.1)
-- **Fecha**: 2026-10-18, 17:43 (UTC-5). **Backend**: `~/athletecore-api` commit
-  `70fc10d` (2026-10-08), perfil `local`, PostgreSQL docker `athletecore-postgres`.
-- **Resultado**: `npx playwright test` → **9/9 passed** (exit 0) en 2.5m con
-  workers=1: login (4), alta de deportista (1), pase de lista (1), chequeo +
-  comparación (1), PDF generación + descarga (2). Dev server reutilizado por
-  `webServer.reuseExistingServer`.
+### Correcciones del review de calidad (cierre del change)
+
+El review post-implementación dictaminó NO APTO (3 bloqueantes + 4 menores);
+todo corregido en el mismo commit de cierre:
+
+- **B1 (crítico)**: `fetchReservedReferenceIds` (e2e/fixtures/api.ts) pedía
+  `GET /national-reference-times?style=…&distance=…&category=…`, pero el back
+  ignora los query params y devuelve TODAS las filas activas — el cleanup
+  soft-deletaba la tabla nacional COMPLETA en cada corrida (la del 17:43 vació
+  el triple real LIBRE/100/MAYOR). Fix: GET sin params + filtrado client-side
+  por la combinación reservada (igual que `useNationalReferenceTimes` +
+  agrupación client-side de la matriz) y solo entonces mapear ids. Validado
+  end-to-end: tras la corrida del cierre, las 3 filas del usuario siguen activas.
+- **B2 (alto)**: `cleanup.run()` estaba en la última línea del cuerpo del test —
+  un fallo a mitad dejaba todo activo en el back compartido. Fix: fixture
+  `cleanup` auto (e2e/fixtures/harness.ts) cuyo teardown corre SIEMPRE (éxito,
+  fallo o timeout), una vez por intento; dependencia explícita en `page` para
+  que el cleanup corra antes del cierre de la página (los pasos usan
+  `page.request`). Además, los registros ahora ocurren EN CUANTO existe el id
+  (wizard → URL de la ficha; chequeo → testid; reporte → URL del detalle), no al
+  final del test.
+- **B3 (medio)**: el "prerrequisito registrado" del ensamblado de reportes solo
+  estaba prometido. Registrado como **T11** en
+  `docs/backend-contract/09-decisiones-deuda-y-pendientes.md` (formato T9/T10).
+- **M1 (design C6)**: aserción global de consola implementada en el harness
+  (`page.on("console")` desde antes de la primera navegación + aserción en el
+  teardown de 0 mensajes `error`). Único filtro documentado: ruido de red del
+  navegador ("Failed to load resource: …", p. ej. el 401 del login inválido o el
+  500 del reporte fallido) — los `console.error` de React/app rompen el test.
+- **M2**: comentario stale del caso FAILED en `report-pdf.spec.ts` actualizado
+  al comportamiento real (`report-form-error` + mensaje seguro).
+- **M3**: filename discriminativo (`reporte-individual-{id}.pdf` del
+  Content-Disposition o el fallback `reporte-{id}.pdf` — ambos con el id) y
+  eliminado el no-op `writeFile(readFile(...))`; el binario se lee directo tras
+  `saveAs`.
+- **M4**: rama 204 muerta de `postJson` eliminada (ningún POST del contrato
+  devuelve 204) y la cita de procedencia del seed corregida en
+  `e2e/fixtures/session.ts` (era "doc 02 §6"; la real es la precondición 3 de
+  `archive/2026-10-12-integrar-athletes/tasks.md`).
+
+### Restauración de la tabla nacional (aprobada por el usuario)
+
+La corrida del 17:43 soft-deletó todas las filas activas del back local
+(`national_reference_times` — plural, columna `deleted_at`). Inspección previa:
+32 filas, 0 activas; 2 soft-deletes previos del usuario (ids 1 y 3,
+2026-10-13 — NO restaurados) y 30 de la ventana E2E del 2026-10-18 (el triple
+real LIBRE/100/MAYOR ids 2/4/5 + 27 artefactos MARIPOSA/999/INFANTIL).
+
+**Restauradas 3 filas** (ids 2, 4, 5 — el triple real del usuario) con el
+criterio `deleted_at >= '2026-10-18' AND NOT (MARIPOSA/999/INFANTIL)`: revivir
+los 27 artefactos 999 violaría el unique index parcial
+`uq_national_reference_times_style_distance_category_position` (8 triples
+duplicados) y la suite los recrea por sí misma (`ensureReferenceTriple`
+tolera 409 y el cleanup fijo los borra). El UPDATE se ejecutó por JDBC directo
+(sin `psql`/docker CLI en el entorno; credenciales del perfil `local`:
+`athletecore_user`/`athletecore_pass`, db `athletecore`). Verificación
+post-UPDATE por API: `GET /national-reference-times` devolvió las 3 filas.
+Los 27 artefactos 999 quedan soft-deleted (invisibles para la UI).
+
+### Resultado de la ejecución E2E (7.1, corrida de cierre tras las correcciones)
+- **Fecha**: 2026-10-18, 20:29 (UTC-5). **Backend**: `~/athletecore-api` commit
+  `70fc10d` (2026-10-08), perfil `local`, PostgreSQL en :5432 (db `athletecore`,
+  usuario `athletecore_user`).
+- **Resultado**: `npm run test:e2e` → **9/9 passed** (exit 0) en 2.6m con
+  workers=1, sin reintentos: login (4), alta de deportista (1), pase de lista
+  (1), chequeo + comparación (1), PDF generación + descarga (2). El dev server
+  lo levantó el `webServer` de Playwright (no había uno previo).
+- **Validación del fix B1**: tras la corrida las 3 filas restauradas del usuario
+  siguen activas y los 6 artefactos 999 creados por la suite (2 triples) quedaron
+  soft-deleted por el cleanup corregido.
 - Nota de entorno: el `actuator/health` exige JWT (401 anónimo); el sanity real
   es el `POST /auth/login` del global-setup (ver desviación 0.5).
+- Verificación de cierre: `npm run test` → 40 archivos / **382 tests passed**;
+  `npm run build` OK; `npm run design:check` OK (52 pares de contraste, 133
+  archivos sin violaciones). `test-results/` y `playwright-report/` se
+  limpiaron antes del design:check (desviación conocida del checker).

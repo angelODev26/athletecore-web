@@ -21,7 +21,11 @@ export const API_PREFIX = "/api/v1";
 
 export type E2eRole = "ADMIN" | "USER";
 
-/** Credenciales del seed local (designs previos: doc 02 §6). */
+/**
+ * Credenciales del seed local. Procedencia real: precondición 3 de
+ * `openspec/changes/archive/2026-10-12-integrar-athletes/tasks.md` (el doc 02 §6
+ * habla de CSRF/BCrypt, no del seed).
+ */
 export const ROLE_CREDENTIALS: Record<E2eRole, { username: string; password: string }> = {
   ADMIN: { username: "admin.demo", password: "secret123" },
   USER: { username: "demo.user", password: "secret123" },

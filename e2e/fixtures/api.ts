@@ -4,8 +4,9 @@ import { API_ORIGIN, API_PREFIX, openApp, type E2eRole } from "./session";
 
 /*
  * Fábrica de datos por API (design.md C4 de e2e-flujos-criticos). Cada spec crea
- * SUS datos al empezar con sufijos únicos (`e2e-<spec>-<ts>`) y limpia en afterEach
- * (best-effort: el soft delete universal hace los restos invisibles para la UI).
+ * SUS datos al empezar con sufijos únicos (`e2e-<spec>-<ts>`) y limpia al terminar
+ * el test (teardown del fixture `cleanup` de fixtures/harness.ts, siempre — éxito
+ * o fallo; best-effort: el soft delete universal hace los restos invisibles).
  * Endpoints y DTOs: idénticos a los de src/modules/*-api.ts (contrato docs 03–07).
  */
 
@@ -83,7 +84,9 @@ async function postJson<T>(
   if (response.status() !== expectedStatus) {
     throw new Error(`POST ${path} → ${response.status()} (esperaba ${expectedStatus}): ${await response.text()}`);
   }
-  return (response.status() === 204 ? undefined : ((await response.json()) as T)) as T;
+  // El contrato no define ningún POST que devuelva 204 (creates → 201): si el
+  // status esperado cambia algún día, que el helper falle sin rama fantasma.
+  return (await response.json()) as T;
 }
 
 /** DELETE best-effort: 204/404 son aceptables (soft delete universal). */
@@ -317,15 +320,26 @@ export async function ensureReferenceTriple(api: E2eApi): Promise<E2eReferenceTi
   return created;
 }
 
-/** GET /national-reference-times filtrado por el triple (para cleanup completo). */
+/**
+ * GET /national-reference-times (SIN query params: el back no los soporta —
+ * `getAllReferences` devuelve TODAS las filas activas, igual que
+ * `useNationalReferenceTimes` de src/modules/checkups/checkups-api.ts) y filtra
+ * CLIENT-SIDE el triple reservado (review B1). Filtrar aquí y no en la URL es
+ * lo que evita soft-deletar la tabla nacional completa: nunca mapear ids de
+ * filas ajenas a la combinación (MARIPOSA / 999 / INFANTIL).
+ */
 async function fetchReservedReferenceIds(api: E2eApi): Promise<number[]> {
-  const params = new URLSearchParams({
-    style: RESERVED_REFERENCE.style,
-    distance: String(RESERVED_REFERENCE.distance),
-    category: RESERVED_REFERENCE.category,
-  });
-  const rows = await getJson<Array<{ id: number }>>(api, `/national-reference-times?${params.toString()}`);
-  return rows.map((row) => row.id);
+  const rows = await getJson<
+    Array<{ id: number; style: string; distance: number; category: string }>
+  >(api, "/national-reference-times");
+  return rows
+    .filter(
+      (row) =>
+        row.style === RESERVED_REFERENCE.style &&
+        row.distance === RESERVED_REFERENCE.distance &&
+        row.category === RESERVED_REFERENCE.category,
+    )
+    .map((row) => row.id);
 }
 
 /**

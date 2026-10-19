@@ -1,8 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
 import {
   addCheckupTime,
-  CleanupRegistry,
   createAthlete,
   deleteReservedReferenceTriple,
   ensureReferenceTriple,
@@ -12,6 +9,7 @@ import {
   softDeleteCheckup,
   type E2eApi,
 } from "./fixtures/api";
+import { expect, test, type Page } from "./fixtures/harness";
 import { openApp } from "./fixtures/session";
 
 /*
@@ -24,10 +22,9 @@ import { openApp } from "./fixtures/session";
 
 const MONTH_NAME = "Marzo";
 
-test("el tiempo del servidor se renderiza exacto en chequeo y comparación", async ({ page }) => {
+test("el tiempo del servidor se renderiza exacto en chequeo y comparación", async ({ page, cleanup }) => {
   const token = await openApp(page, "ADMIN");
   const api: E2eApi = { request: page.request, token };
-  const cleanup = new CleanupRegistry();
 
   const athlete = await createAthlete(api, "chequeo");
   cleanup.add(() => softDeleteAthlete(api, athlete.id));
@@ -53,6 +50,8 @@ test("el tiempo del servidor se renderiza exacto en chequeo y comparación", asy
   const openButton = row.getByTestId(/^checkup-open-/);
   const openTestId = await openButton.getAttribute("data-testid");
   const checkupId = Number(openTestId?.replace("checkup-open-", ""));
+  // Limpieza registrada ya: el chequeo existe y su id es conocido (review B2).
+  cleanup.add(() => softDeleteCheckup(api, checkupId));
 
   // ── Detalle: añadir el tiempo MARIPOSA / 999 en `mm:ss.fff` ──
   await openButton.click();
@@ -86,9 +85,6 @@ test("el tiempo del servidor se renderiza exacto en chequeo y comparación", asy
       .filter({ hasText: position.referenceTimeFormatted });
     await expect(row.filter({ hasText: position.absoluteDiffFormatted })).toHaveCount(1);
   }
-
-  cleanup.add(() => softDeleteCheckup(api, checkupId));
-  await cleanup.run();
 });
 
 /** Abre un Radix Select por testid y elige la opción por su etiqueta visible. */

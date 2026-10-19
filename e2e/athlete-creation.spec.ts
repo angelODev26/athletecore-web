@@ -1,22 +1,22 @@
 import type { Page } from "@playwright/test";
-import { expect, test } from "@playwright/test";
 
-import { CleanupRegistry, uniqueSuffix, type E2eApi } from "./fixtures/api";
-import { API_ORIGIN, API_PREFIX, openApp } from "./fixtures/session";
+import { uniqueSuffix, softDeleteAthlete, type E2eApi } from "./fixtures/api";
+import { expect, test } from "./fixtures/harness";
+import { openApp } from "./fixtures/session";
 
 /*
  * F2 (design.md C5): alta de deportista desde la UI real.
  * Paso 1 (obligatorios del contrato 04) → paso 2 (fecha de nacimiento) →
  * paso 3 omitido ("Omitir y terminar" navega a la ficha con `recienCreado`) →
  * ficha con el nombre único → visible en `athletes-row` de la lista.
- * El atleta lo crea el WIZARD (no la fábrica por API); el cleanup lo busca por
- * username único en el listado paginado y lo borra (soft delete, best-effort).
+ * El atleta lo crea el WIZARD (no la fábrica por API); el cleanup se registra
+ * en CUANTO la ficha revela el id en la URL — si algo falla después (p. ej. la
+ * verificación en la lista), el teardown del fixture lo borra igual (review B2).
  */
 
-test("el wizard de alta crea un deportista que aparece en la lista", async ({ page }) => {
+test("el wizard de alta crea un deportista que aparece en la lista", async ({ page, cleanup }) => {
   const token = await openApp(page, "ADMIN");
   const api: E2eApi = { request: page.request, token };
-  const cleanup = new CleanupRegistry();
 
   const suffix = uniqueSuffix("alta");
   const firstName = `Nombre_${suffix}`;
@@ -44,6 +44,10 @@ test("el wizard de alta crea un deportista que aparece en la lista", async ({ pa
   // La ficha no tiene testid de contenedor: el nombre único es la aserción de contenido.
   await expect(page.getByRole("main")).toContainText(fullName);
 
+  // Limpieza registrada ya: el wizard terminó y la ficha expone el id en la URL.
+  const athleteId = athleteIdFromUrl(page.url());
+  cleanup.add(() => softDeleteAthlete(api, athleteId));
+
   // ── El atleta aparece en la lista (paginando si hiciera falta) ──
   await page.goto("/athletes");
   const row = await findAthleteRow(page, fullName);
@@ -51,10 +55,16 @@ test("el wizard de alta crea un deportista que aparece en la lista", async ({ pa
     throw new Error(`el atleta ${fullName} no apareció en la lista de deportistas`);
   }
   await expect(row).toBeVisible();
-
-  await registerAthleteCleanup(api, suffix, cleanup);
-  await cleanup.run();
 });
+
+/** Id numérico final del path de la ficha (`/athletes/{id}`), o falla con mensaje claro. */
+function athleteIdFromUrl(url: string): number {
+  const id = Number(new URL(url).pathname.split("/").pop());
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error(`la ficha no expone el id en la URL: "${url}"`);
+  }
+  return id;
+}
 
 /** Busca la fila del atleta recorriendo la paginación (tope 10 páginas). */
 async function findAthleteRow(page: Page, fullName: string) {
@@ -73,38 +83,4 @@ async function findAthleteRow(page: Page, fullName: string) {
     await expect(page.getByTestId("athletes-loading")).toHaveCount(0);
   }
   return null;
-}
-
-/**
- * Limpieza best-effort del atleta creado por UI: recorre el listado paginado por
- * API buscando el username único y registra su soft delete (204).
- */
-async function registerAthleteCleanup(api: E2eApi, suffix: string, cleanup: CleanupRegistry): Promise<void> {
-  const username = `usr_${suffix}`;
-  for (let pageNumber = 0; pageNumber < 10; pageNumber += 1) {
-    const response = await api.request.get(
-      `${API_ORIGIN}${API_PREFIX}/athletes?page=${pageNumber}&size=50&sort=lastName,asc`,
-      { headers: { Authorization: `Bearer ${api.token}` } },
-    );
-    if (!response.ok()) {
-      return;
-    }
-    const body = (await response.json()) as {
-      content?: Array<{ id: number; username: string }>;
-      last?: boolean;
-    };
-    for (const athlete of body.content ?? []) {
-      if (athlete.username === username) {
-        cleanup.add(() =>
-          api.request.delete(`${API_ORIGIN}${API_PREFIX}/athletes/${athlete.id}`, {
-            headers: { Authorization: `Bearer ${api.token}` },
-          }),
-        );
-        return;
-      }
-    }
-    if (body.last ?? true) {
-      return;
-    }
-  }
 }
