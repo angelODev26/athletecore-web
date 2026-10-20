@@ -116,7 +116,13 @@ export function UsersPage() {
         </div>
       )}
 
-      {users.length > 0 ? (
+      {/*
+        P4: un refetch que falla CONSERVA `data` (TanStack Query no la descarta),
+        así que `users.length > 0` seguiría siendo cierto con `isError: true` y el
+        pie de paginación aparecería junto a la tarjeta de error. Con error, el pie
+        se calla: la lista visible es la del error, no la de los datos conservados.
+      */}
+      {!usersQuery.isError && users.length > 0 ? (
         <nav className="flex items-center justify-between gap-3" aria-label="Paginación de usuarios">
           <p className="text-dim text-caption">
             Página {currentPage + 1} de {totalPages} · {pageModel.totalItems} usuario

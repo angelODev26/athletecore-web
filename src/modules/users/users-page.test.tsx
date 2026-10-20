@@ -222,6 +222,28 @@ describe("UsersPage — lista (C1/C4/C7)", () => {
     expect(screen.queryByText(/Página 2 de 1/)).not.toBeInTheDocument();
   });
 
+  it("P4: refetch fallido con datos conservados muestra el error y NO el pie de paginación", async () => {
+    signInAs(["ADMIN"]);
+    apiFetchMock
+      .mockResolvedValueOnce(makeUsers(USERS_PAGE_SIZE + 2))
+      .mockRejectedValueOnce(new Error("network down"));
+    const queryClient = renderPage();
+
+    expect(await screen.findByText("staff1")).toBeInTheDocument();
+    expect(screen.getByText(/Página 1 de 2/)).toBeInTheDocument();
+
+    // Refetch que falla: TanStack Query CONSERVA `data` y marca `isError: true`.
+    await queryClient.refetchQueries({ queryKey: USERS_LIST_KEY }).catch(() => {});
+
+    expect(await screen.findByTestId("users-error")).toBeInTheDocument();
+    expect(screen.queryByTestId("users-list")).not.toBeInTheDocument();
+    // Lo importante: la navegación no se pinta junto a la tarjeta de error.
+    expect(screen.queryByText(/Página 1 de 2/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/usuarios en total/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("users-pagination-prev")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("users-pagination-next")).not.toBeInTheDocument();
+  });
+
   it("lista vacía: estado vacío", async () => {
     signInAs(["ADMIN"]);
     apiFetchMock.mockResolvedValueOnce([]);
