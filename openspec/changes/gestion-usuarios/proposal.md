@@ -34,8 +34,9 @@ pública `/registro` desaparece).
 - **`/registro` desaparece** (ruta pública, página y mutación de `auth-api`) en el
   mismo corte de la fase gated: la app nunca queda con dos formas de crear
   usuarios ni con ninguna rota apuntando a un endpoint cerrado.
-- Sin dependencias nuevas; cero solapamiento de archivos con el change paralelo
-  `e2e-flujos-criticos` (solo una línea de `AGENTS.md` al cierre de cada uno).
+- Sin dependencias nuevas. `e2e-flujos-criticos` ya está archivado y fusionado a
+  `main`; el único solapamiento de archivos fue `AGENTS.md` (resuelto: D7 +
+  una línea de Estructura al cierre de este change).
 
 ## Capabilities
 

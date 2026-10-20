@@ -136,6 +136,7 @@ alta-admin dentro, sin ventana intermedia. Si P1 aterriza antes que B, la págin
 | testid | Dónde |
 |---|---|
 | `users-page`, `users-list`, `users-pagination-prev`, `users-pagination-next`, `users-empty`, `users-error`, `users-loading` | lista |
+| `user-row-{id}` (convención del repo: `report-row-{id}`, `plan-row-{id}`) | fila |
 | `user-enabled-badge` (por fila, sufijo id) | badge informativo |
 | `user-new-button`, `user-form`, `user-username-input`, `user-email-input`, `user-firstName-input`, `user-lastName-input`, `user-password-input`, `user-confirmPassword-input`, `user-role-select`, `user-submit`, `user-duplicate-field` | dialog (fase B) |
 

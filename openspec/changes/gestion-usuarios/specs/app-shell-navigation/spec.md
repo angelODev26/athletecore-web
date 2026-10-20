@@ -2,6 +2,20 @@
 
 ## MODIFIED Requirements
 
+### Requirement: Shell con navegación principal
+El sistema SHALL renderizar un shell persistente con navegación a las secciones
+principales: dashboard, deportistas, entrenamientos, tabla nacional (solo ADMIN),
+usuarios (solo ADMIN) y reportes. La antigua entrada "Chequeos" desaparece: los
+chequeos viven como pestaña de la ficha del atleta.
+
+#### Scenario: Navegar entre secciones
+- **WHEN** el usuario selecciona "Deportistas" en la navegación
+- **THEN** la ruta cambia a la lista de deportistas
+
+#### Scenario: El nav ya no muestra la sección placeholder de chequeos
+- **WHEN** cualquier usuario autenticado abre la app
+- **THEN** la navegación no contiene un ítem "Chequeos" independiente
+
 ### Requirement: Rutas públicas y privadas
 El sistema SHALL exponer únicamente `/login` como ruta pública y proteger el
 resto; un usuario sin sesión o con token expirado MUST ser redirigido a

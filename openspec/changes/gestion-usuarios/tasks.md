@@ -62,10 +62,10 @@ el CÓDIGO del back y el doc 03 actualizado. Entonces:
       `toUserFacingMessage`. Testids C7.
 - [ ] B.5 **Corte del registro público** (C1/C6, mismo release que B.4):
       eliminar la ruta `/registro` del router, borrar
-      `src/modules/auth/register-page.tsx` y su test, retirar la mutación
-      `register` de `auth-api.ts` (y sus imports), dejar `RequireGuest` SOLO en
-      `/login`. Actualizar `app-shell.test.tsx` con el escenario "la ruta de
-      registro ya no existe".
+      `src/modules/auth/register-page.tsx` (no tiene test propio), retirar la
+      mutación `register` de `auth-api.ts` (y sus imports), dejar `RequireGuest`
+      SOLO en `/login`. Actualizar `app-shell.test.tsx` con el escenario "la ruta
+      de registro ya no existe".
 - [ ] B.6 La lista gana la columna de rol (render tolerante si `roles` viene
       ausente) y el botón `user-new-button` visible solo ADMIN.
 - [ ] B.7 Tests fase B: alta COACH end-to-end del form (201 → lista
@@ -76,14 +76,18 @@ el CÓDIGO del back y el doc 03 actualizado. Entonces:
 
 ## Fase C — Cierre
 
-- [ ] C.1 Registrar **D7** en `AGENTS.md` (tabla P1–P3 resumida de §C8) y
+- [x] C.1 Registrar **D7** en `AGENTS.md` (tabla P1–P3 resumida de §C8) y
       actualizar la sección Estructura con `src/modules/users/`.
-- [ ] C.2 Anotar cualquier desviación aquí antes de pedir `/review` (el
+- [x] C.2 Anotar cualquier desviación aquí antes de pedir `/review` (el
       orquestador dispara a `quality-reviewer` con el scope del change).
-- [ ] C.3 Si P1/P2 siguen pendientes al terminar la fase A, marcar B.1–B.8
-      como bloqueadas (ya lo están), cerrar el change SOLO con fase A +
-      documentación del gating, y dejar constancia en desviaciones de que B
-      queda para un cambio de continuación cuando el back entregue.
+- [ ] C.3 **Decisión post-review (2026-10-19): mantener el change ABIERTO.**
+      El delta contiene requisitos de fase B (alta con rol, registro cerrado,
+      admin sembrado y el retiro de `/registro`): archivarlo ahora sincronizaría
+      a los specs principales requisitos NO implementados. La fase B se retoma en
+      ESTE change cuando el back entregue P1/P2 (tareas B.1–B.8 ya escritas); solo
+      si el back se demora tanto que el cambio quede estancado, se escinde B a un
+      change de continuación moviendo antes esos requisitos. La fase A queda
+      revisada (APTO) y commiteada en `feature/gestion-usuarios`.
 
 ## Desviaciones
 
@@ -108,3 +112,24 @@ el CÓDIGO del back y el doc 03 actualizado. Entonces:
 - **Verificación visual (A.7) — puerto del dev server**: CORS del back local solo
   permite `localhost:3000/5173` (`application-local.properties`), así que la
   verificación corrió en el puerto por defecto 5173 en vez de un puerto arbitrario.
+
+## Notas del review de la fase A (2026-10-19)
+
+Veredicto **APTO** (sin hallazgos de seguridad ni de contrato; fase B verificada
+intacta). Deuda menor aceptada, no bloqueante:
+
+- **Página fuera de rango tras un refetch que reduzca la lista**
+  (`users-page.tsx:35-38`: no se recorta `page`; hoy inalcanzable porque el back
+  solo añade usuarios y no hay DELETE). Corregido en el pase posterior al review
+  (guard de recorte + test de `users-loading`).
+- **Cobertura**: `users-loading` existe pero no tenía test; añadido en el pase
+  posterior. `user-row-{id}` sigue la convención del repo (`report-row-{id}`,
+  `plan-row-{id}`) y se documentó en design C7.
+- **Acoplamiento users→training** por el re-export de `paginateClientSide`
+  (desviación A.2): deuda de mantenibilidad para una limpieza futura — promover el
+  adapter a `src/lib/api/pagination.ts` y que ambos módulos importen de ahí.
+- **E2E de "Usuarios"** (nav ADMIN / ausencia en USER): pendiente para una
+  ampliación futura de `e2e-tester`; los specs E2E actuales no asertan una lista
+  exacta de enlaces y no se rompen con el ítem nuevo.
+- **Usuarios `visual.check1..8`**: permanecen en la BD local (sin DELETE en el
+  contrato); inocuos y solo visibles en `/usuarios`.
