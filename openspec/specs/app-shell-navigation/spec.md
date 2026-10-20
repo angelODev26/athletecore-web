@@ -6,7 +6,7 @@ Define el shell de la aplicación: navegación principal persistente, separació
 ## Requirements
 
 ### Requirement: Shell con navegación principal
-El sistema SHALL renderizar un shell persistente con navegación a las secciones principales: dashboard, deportistas, entrenamientos, tabla nacional (solo ADMIN) y reportes. La antigua entrada "Chequeos" desaparece: los chequeos viven como pestaña de la ficha del atleta.
+El sistema SHALL renderizar un shell persistente con navegación a las secciones principales: dashboard, deportistas, entrenamientos, tabla nacional (solo ADMIN), usuarios (solo ADMIN) y reportes. La antigua entrada "Chequeos" desaparece: los chequeos viven como pestaña de la ficha del atleta.
 
 #### Scenario: Navegar entre secciones
 - **WHEN** el usuario selecciona "Deportistas" en la navegación
@@ -32,7 +32,7 @@ El sistema SHALL exponer `/login` y `/registro` como rutas públicas y proteger 
 - **THEN** es redirigido al dashboard
 
 ### Requirement: Navegación filtrada por rol
-El sistema SHALL mostrar únicamente las opciones de navegación permitidas para los roles presentes en el JWT; entrenamientos SHALL ser visible solo para ADMIN/COACH y tabla nacional SHALL ser visible solo para ADMIN.
+El sistema SHALL mostrar únicamente las opciones de navegación permitidas para los roles presentes en el JWT; entrenamientos SHALL ser visible solo para ADMIN/COACH, tabla nacional SHALL ser visible solo para ADMIN y usuarios SHALL ser visible solo para ADMIN.
 
 #### Scenario: Usuario sin rol de entrenamiento
 - **WHEN** un usuario sin rol COACH ni ADMIN abre la app
@@ -45,6 +45,14 @@ El sistema SHALL mostrar únicamente las opciones de navegación permitidas para
 #### Scenario: ADMIN ve tabla nacional
 - **WHEN** un ADMIN abre la app
 - **THEN** la opción "Tabla nacional" aparece en la navegación y lleva a `/tabla-nacional`
+
+#### Scenario: Usuarios solo para ADMIN
+- **WHEN** un COACH o USER abre la app
+- **THEN** la opción "Usuarios" no aparece en la navegación
+
+#### Scenario: ADMIN ve usuarios
+- **WHEN** un ADMIN abre la app
+- **THEN** la opción "Usuarios" aparece en la navegación y lleva a `/usuarios`
 
 ### Requirement: Estados compartidos de UI
 El sistema MUST proveer componentes compartidos para estados de carga, vacío y error reutilizables por todos los módulos.
