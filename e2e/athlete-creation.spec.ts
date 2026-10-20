@@ -9,9 +9,9 @@ import { openApp } from "./fixtures/session";
  * Paso 1 (obligatorios del contrato 04) → paso 2 (fecha de nacimiento) →
  * paso 3 omitido ("Omitir y terminar" navega a la ficha con `recienCreado`) →
  * ficha con el nombre único → visible en `athletes-row` de la lista.
- * El atleta lo crea el WIZARD (no la fábrica por API); el cleanup se registra
- * en CUANTO la ficha revela el id en la URL — si algo falla después (p. ej. la
- * verificación en la lista), el teardown del fixture lo borra igual (review B2).
+ * El atleta lo crea el WIZARD (no la fábrica por API); el cleanup se registra en
+ * cuanto responde el POST del paso 1 (id del body), antes de tocar los pasos 2/3 —
+ * si algo falla después, el teardown del fixture lo borra igual.
  */
 
 test("el wizard de alta crea un deportista que aparece en la lista", async ({ page, cleanup }) => {
@@ -32,7 +32,21 @@ test("el wizard de alta crea un deportista que aparece en la lista", async ({ pa
   await page.getByTestId("athlete-form-email").fill(`${suffix}@e2e.athletecore.local`);
   await page.getByTestId("athlete-form-firstName").fill(firstName);
   await page.getByTestId("athlete-form-lastName").fill(lastName);
+
+  // El POST del paso 1 crea el deportista: registrar el cleanup EN CUANTO responde,
+  // antes de tocar los pasos 2/3 (si algo falla allí, el teardown lo borra igual).
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      new URL(response.url()).pathname === "/api/v1/athletes",
+  );
   await page.getByTestId("athlete-form-submit").click();
+  const createResponse = await createResponsePromise;
+  if (createResponse.status() !== 201) {
+    throw new Error(`POST /athletes → ${createResponse.status()}: ${await createResponse.text()}`);
+  }
+  const createdAthlete = (await createResponse.json()) as { id: number };
+  cleanup.add(() => softDeleteAthlete(api, createdAthlete.id));
 
   // ── Paso 2: fecha de nacimiento (opcional, la rellenamos) ──
   await page.getByTestId("athlete-birthdate-input").fill("2005-06-15");
@@ -44,9 +58,8 @@ test("el wizard de alta crea un deportista que aparece en la lista", async ({ pa
   // La ficha no tiene testid de contenedor: el nombre único es la aserción de contenido.
   await expect(page.getByRole("main")).toContainText(fullName);
 
-  // Limpieza registrada ya: el wizard terminó y la ficha expone el id en la URL.
-  const athleteId = athleteIdFromUrl(page.url());
-  cleanup.add(() => softDeleteAthlete(api, athleteId));
+  // La ficha es la del deportista que creó el wizard (mismo id del POST).
+  await expect(new URL(page.url()).pathname).toBe(`/athletes/${createdAthlete.id}`);
 
   // ── El atleta aparece en la lista (paginando si hiciera falta) ──
   await page.goto("/athletes");
@@ -56,15 +69,6 @@ test("el wizard de alta crea un deportista que aparece en la lista", async ({ pa
   }
   await expect(row).toBeVisible();
 });
-
-/** Id numérico final del path de la ficha (`/athletes/{id}`), o falla con mensaje claro. */
-function athleteIdFromUrl(url: string): number {
-  const id = Number(new URL(url).pathname.split("/").pop());
-  if (!Number.isInteger(id) || id <= 0) {
-    throw new Error(`la ficha no expone el id en la URL: "${url}"`);
-  }
-  return id;
-}
 
 /** Busca la fila del atleta recorriendo la paginación (tope 10 páginas). */
 async function findAthleteRow(page: Page, fullName: string) {

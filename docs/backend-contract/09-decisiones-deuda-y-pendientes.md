@@ -79,6 +79,7 @@
 | T9 | Reportes: lista filtrada en memoria | Cap de resultados en UI; refinar filtros antes de llamar |
 | T10 | Sin rate limiting ni brute-force en back | El front aplica sus propias mitigaciones de UX (bloqueo temporal del botón de login) |
 | T11 | Ensamblado de reportes en una sola transacción: `ReportGenerationService.generateReport` es `@Transactional` y el fallo de ensamblado (p. ej. `DuplicateResourceException` 409 desde `MedalProjectionService.getProjectionsForAthlete`, proxy anidado `@Transactional(readOnly = true)`) marca rollback-only — el `catch` que debería persistir FAILED nunca llega a commitear y el commit lanza `UnexpectedRollbackException` → **500**. Debería usar `REQUIRES_NEW` (o no ser transaccional) en el ensamblado | El estado FAILED (201 + `errorMessage`, contrato 07) es inalcanzable contra el back actual: la UI trata cualquier fallo de generación como error seguro del formulario (`report-form-error`) y no promete el badge "Fallido" |
+| T12 | CORS del perfil local sin cabeceras de respuesta expuestas (`CorsConfig` sin `setExposedHeaders`; `application-local.properties` sin `exposed-headers`) | El front no puede leer `Content-Disposition` en la descarga cross-origin del PDF y usa su fallback `reporte-{id}.pdf`; el E2E aserta ese fallback. Prerrequisito: exponer `Content-Disposition` para usar el filename del servidor (`reporte-individual-{id}.pdf`) |
 
 ---
 

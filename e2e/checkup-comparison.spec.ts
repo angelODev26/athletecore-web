@@ -1,5 +1,4 @@
 import {
-  addCheckupTime,
   createAthlete,
   deleteReservedReferenceTriple,
   ensureReferenceTriple,
@@ -9,8 +8,9 @@ import {
   softDeleteCheckup,
   type E2eApi,
 } from "./fixtures/api";
-import { expect, test, type Page } from "./fixtures/harness";
+import { expect, test } from "./fixtures/harness";
 import { openApp } from "./fixtures/session";
+import { selectRadixOption } from "./fixtures/ui";
 
 /*
  * F4 (design.md C5): registro de chequeo + tiempo `mm:ss.fff` + comparación contra
@@ -28,9 +28,10 @@ test("el tiempo del servidor se renderiza exacto en chequeo y comparación", asy
 
   const athlete = await createAthlete(api, "chequeo");
   cleanup.add(() => softDeleteAthlete(api, athlete.id));
-  // Triple reservado completo ANTES de comparar (re-asegurado por si otra sesión lo mutó).
-  await ensureReferenceTriple(api);
+  // Cleanup registrado ANTES de crear: si una posición falla a mitad del loop, el
+  // teardown barre igualmente el triple reservado (idempotente, 404 tolerado).
   cleanup.add(() => deleteReservedReferenceTriple(api));
+  await ensureReferenceTriple(api);
 
   // ── Alta del chequeo desde la UI ──
   await page.goto(`/athletes/${athlete.id}/chequeos`);
@@ -71,6 +72,8 @@ test("el tiempo del servidor se renderiza exacto en chequeo y comparación", asy
   await expect(page.getByTestId("checkup-times-table")).toContainText(detail.times[0].timeFormatted);
 
   // ── Comparación lazy contra el triple reservado ──
+  // Re-asegurado justo antes de comparar: otra sesión pudo borrarlo durante el test.
+  await ensureReferenceTriple(api);
   await page.getByTestId("comparison-button").click();
   await expect(page.getByTestId("comparison-panel")).toBeVisible();
 
@@ -86,9 +89,3 @@ test("el tiempo del servidor se renderiza exacto en chequeo y comparación", asy
     await expect(row.filter({ hasText: position.absoluteDiffFormatted })).toHaveCount(1);
   }
 });
-
-/** Abre un Radix Select por testid y elige la opción por su etiqueta visible. */
-async function selectRadixOption(page: Page, triggerTestId: string, optionLabel: string): Promise<void> {
-  await page.getByTestId(triggerTestId).click();
-  await page.getByRole("option", { name: optionLabel }).click();
-}

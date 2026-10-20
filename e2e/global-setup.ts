@@ -4,6 +4,8 @@ import { homedir } from "node:os";
 
 import type { FullConfig } from "@playwright/test";
 
+import { ROLE_CREDENTIALS } from "./fixtures/session";
+
 /*
  * Precondición de la suite (design.md C2 de e2e-flujos-criticos): si el backend
  * real no responde en :8080, se aborta TODA la suite con un mensaje accionable —
@@ -17,12 +19,14 @@ import type { FullConfig } from "@playwright/test";
 const API_HEALTH_URL = "http://localhost:8080/api/v1/actuator/health";
 const API_LOGIN_URL = "http://localhost:8080/api/v1/auth/login";
 
-/** Leventanta el entorno: comandos de los designs previos (doc 01 §setup). */
-function environmentMessage(): string {
+/** Levanta el entorno: comandos de los designs previos (doc 01 §setup). */
+function environmentMessage(failure: string): string {
   const apiDir = join(homedir(), "athletecore-api");
-  const dockerAvailable =
-    existsSync("/usr/bin/docker") ||
-    existsSync("/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe");
+  const dockerCommand = existsSync("/usr/bin/docker")
+    ? "docker start athletecore-postgres"
+    : existsSync("/mnt/c/Program Files/Docker/Docker/resources/bin/docker.exe")
+      ? "docker.exe start athletecore-postgres   # Docker Desktop (interop WSL)"
+      : null;
 
   const lines = [
     "",
@@ -30,9 +34,11 @@ function environmentMessage(): string {
     "  La suite E2E exige el backend REAL de AthleteCore en :8080",
     "══════════════════════════════════════════════════════════════════",
     "",
-    "1) PostgreSQL (docker athletecore-postgres):",
-    dockerAvailable
-      ? `   docker.exe start athletecore-postgres   # o: docker start athletecore-postgres`
+    failure,
+    "",
+    "1) PostgreSQL (contenedor athletecore-postgres):",
+    dockerCommand !== null
+      ? `   ${dockerCommand}`
       : "   Arranca Docker Desktop y activa la integración WSL de esta distro.",
     "",
     "2) API (en ~/athletecore-api, perfil local):",
@@ -40,7 +46,9 @@ function environmentMessage(): string {
       ? `   cd ${apiDir} && SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run`
       : "   (No se encontró ~/athletecore-api: clona/ubica el repo del backend.)",
     "",
-    "El health-check y el sanity de login fallaron antes de ejecutar un solo test.",
+    "3) Navegador de Playwright (solo la primera vez):",
+    "   npx playwright install chromium",
+    "",
     "══════════════════════════════════════════════════════════════════",
     "",
   ];
@@ -64,7 +72,8 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     await fetchWithTimeout(API_HEALTH_URL);
   } catch {
     throw new Error(
-      `El backend no responde en ${API_HEALTH_URL}.\n${environmentMessage()}`,
+      `El backend no responde en ${API_HEALTH_URL}.\n` +
+        environmentMessage("Falló el health-check: no hubo respuesta HTTP del backend."),
     );
   }
 
@@ -73,7 +82,7 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
     const response = await fetchWithTimeout(API_LOGIN_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: "admin.demo", password: "secret123" }),
+      body: JSON.stringify(ROLE_CREDENTIALS.ADMIN),
     });
     if (!response.ok) {
       throw new Error(`POST /auth/login respondió ${response.status}`);
@@ -85,9 +94,9 @@ export default async function globalSetup(_config: FullConfig): Promise<void> {
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `El backend responde en :8080 pero el sanity de login con admin.demo falló (${detail}).\n` +
+      `El backend responde en :8080 pero el sanity de login con ${ROLE_CREDENTIALS.ADMIN.username} falló (${detail}).\n` +
         "El perfil local no parece tener el seed de usuarios demo.\n" +
-        environmentMessage(),
+        environmentMessage("Falló el sanity de login; el health-check sí respondió."),
     );
   }
 }

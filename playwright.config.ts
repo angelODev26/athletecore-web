@@ -13,12 +13,15 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 1,
-  trace: "retain-on-failure",
   reporter: [["list"], ["html", { open: "never" }]],
   globalSetup: "./e2e/global-setup.ts",
+  projects: [{ name: "chromium", use: { browserName: "chromium" } }],
   use: {
     baseURL: "http://localhost:5173",
     viewport: { width: 1280, height: 800 },
+    // La traza retenida del fallo incluye la red (Authorization: Bearer); queda en
+    // `test-results/`, gitignored — no adjuntar esos artefactos fuera del equipo.
+    trace: "retain-on-failure",
   },
   webServer: {
     command: "npm run dev",

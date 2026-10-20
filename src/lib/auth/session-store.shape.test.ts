@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it } from "vitest";
  * rompe PRIMERO — no los cinco specs E2E. Este test NO modifica el store.
  */
 
-import { buildSessionStoragePayload } from "../../../e2e/fixtures/session.ts";
+import { buildSessionStoragePayload, expiresAtMsFromToken } from "../../../e2e/fixtures/session.ts";
 import { getExpiresAtMsFromToken } from "./jwt";
 import { useSessionStore } from "./session-store";
 
@@ -56,20 +56,10 @@ describe("session-store shape (guard anti-drift del fixture E2E)", () => {
     );
   });
 
-  it("si el shape cambia, el mensaje apunta al fixture E2E", () => {
-    useSessionStore.getState().setSession({ access: fakeJwt });
-    const persisted = JSON.parse(window.localStorage.getItem("athletecore.session") as string);
-    const expected = buildSessionStoragePayload(fakeJwt, getExpiresAtMsFromToken(fakeJwt));
-
-    try {
-      expect(persisted).toEqual(expected);
-    } catch {
-      // Un drift del store rompe aquí antes que los specs E2E: el arreglo es
-      // actualizar e2e/fixtures/session.ts (builder) junto con el store.
-      throw new Error(
-        "El shape persistido del session-store NO coincide con e2e/fixtures/session.ts " +
-          "(buildSessionStoragePayload). Actualiza el fixture E2E y este guard juntos.",
-      );
-    }
+  it("el parseo de exp del fixture coincide con el del store real", () => {
+    // El fixture replica `getExpiresAtMsFromToken` para no importar el módulo de
+    // auth desde Playwright; este assert detecta cualquier drift en esa lógica.
+    expect(expiresAtMsFromToken(fakeJwt)).toBe(getExpiresAtMsFromToken(fakeJwt));
+    expect(expiresAtMsFromToken("no-es-un-jwt")).toBe(getExpiresAtMsFromToken("no-es-un-jwt"));
   });
 });

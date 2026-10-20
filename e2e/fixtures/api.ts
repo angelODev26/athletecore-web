@@ -1,6 +1,6 @@
-import type { APIRequestContext, Page } from "@playwright/test";
+import type { APIRequestContext } from "@playwright/test";
 
-import { API_ORIGIN, API_PREFIX, openApp, type E2eRole } from "./session";
+import { API_ORIGIN, API_PREFIX } from "./session";
 
 /*
  * Fábrica de datos por API (design.md C4 de e2e-flujos-criticos). Cada spec crea
@@ -142,7 +142,12 @@ export async function softDeleteAthlete(api: E2eApi, athleteId: number): Promise
 function isoDate(offsetDays: number): string {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);
-  return date.toISOString().slice(0, 10);
+  // Fecha LOCAL en ISO (yyyy-mm-dd): `toISOString()` convertiría a UTC y en husos
+  // negativos devolvería el día siguiente.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 /** POST /training-plans → 201. */
@@ -354,32 +359,27 @@ export async function deleteReservedReferenceTriple(api: E2eApi): Promise<void> 
 
 // ─────────────────────────── reportes (doc 07) ───────────────────────────
 
-export interface E2eReport {
-  id: number;
-  status: string;
-  errorMessage: string | null;
-  title: string;
-}
-
-/** POST /reports → 201 con status final (generación síncrona). */
-export async function generateReport(
-  api: E2eApi,
-  body: { reportType: "INDIVIDUAL" | "GENERAL"; athleteId?: number; title: string },
-): Promise<E2eReport> {
-  return postJson<E2eReport>(api, "/reports", body);
-}
-
-export async function softDeleteReport(api: E2eApi, reportId: number): Promise<void> {
-  await deleteOk(api, `/reports/${reportId}`);
+/**
+ * Sweep de reportes de UN atleta (idempotente; 404 tolerado): se registra ANTES de
+ * generar desde la UI, así cubre un fallo entre la 201 y el detalle sin depender de
+ * haber extraído el id del reporte. `GET /reports?athleteId=` es el filtro del contrato.
+ */
+export async function deleteReportsForAthlete(api: E2eApi, athleteId: number): Promise<void> {
+  const reports = await getJson<Array<{ id: number; athleteId: number | null }>>(
+    api,
+    `/reports?athleteId=${athleteId}`,
+  );
+  for (const report of reports) {
+    if (report.athleteId === athleteId) {
+      await deleteOk(api, `/reports/${report.id}`);
+    }
+  }
 }
 
 // ─────────────────────────── helpers de spec ───────────────────────────
 
-export { openApp };
-export type { E2eRole, Page };
-
 /**
- * Registro de limpieza: los specs añaden ids de lo que crean y `runCleanup` los
+ * Registro de limpieza: los specs añaden ids de lo que crean y `run()` los
  * borra en orden inverso de dependencia (best-effort: loguea sin tumbar el test).
  */
 export class CleanupRegistry {

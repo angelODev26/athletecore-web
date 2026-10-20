@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures/harness";
 
-import { loginAs } from "./fixtures/session";
+import { loginAs, ROLE_CREDENTIALS } from "./fixtures/session";
 
 /*
  * F1 (design.md C5): login real contra la API.
@@ -13,8 +13,8 @@ test("admin.demo inicia sesión desde el formulario y llega al dashboard", async
   await page.goto("/login");
   await expect(page.getByTestId("login-page")).toBeVisible();
 
-  await page.getByLabel("Usuario").fill("admin.demo");
-  await page.getByLabel("Contraseña").fill("secret123");
+  await page.getByLabel("Usuario").fill(ROLE_CREDENTIALS.ADMIN.username);
+  await page.getByLabel("Contraseña").fill(ROLE_CREDENTIALS.ADMIN.password);
   await page.getByTestId("login-submit").click();
 
   await expect(page.getByTestId("dashboard-page")).toBeVisible();
@@ -24,7 +24,7 @@ test("credenciales inválidas muestran el mensaje seguro anti-enumeración", asy
   await page.goto("/login");
 
   // Caso 1: password errónea de un usuario existente.
-  await page.getByLabel("Usuario").fill("admin.demo");
+  await page.getByLabel("Usuario").fill(ROLE_CREDENTIALS.ADMIN.username);
   await page.getByLabel("Contraseña").fill("contraseña-errónea");
   await page.getByTestId("login-submit").click();
   await expect(page.getByTestId("login-error")).toContainText("Credenciales inválidas");

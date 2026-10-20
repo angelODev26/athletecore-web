@@ -26,8 +26,9 @@ test("las marcas de asistencia persisten tras recargar la página", async ({ pag
   cleanup.add(() => softDeleteAthlete(api, athleteAbsent.id));
 
   const tree = await createPlanWithCycleAndSession(api, "asis");
-  cleanup.add(() => softDeleteSession(api, tree.session.id));
+  // Orden de registro padre→hijo: el teardown inverso borra primero la sesión.
   cleanup.add(() => softDeletePlan(api, tree.plan.id));
+  cleanup.add(() => softDeleteSession(api, tree.session.id));
 
   // ── Marcar desde la UI ──
   await page.goto(`/training/sessions/${tree.session.id}`);
@@ -36,16 +37,21 @@ test("las marcas de asistencia persisten tras recargar la página", async ({ pag
   await page.getByTestId(`attendance-PRESENTE-${athletePresent.id}`).click();
   await page.getByTestId(`attendance-AUSENTE-${athleteAbsent.id}`).click();
 
-  // Los overrides locales se retiran cuando el detalle re-sincroniza con la API:
-  // la etiqueta del servidor ("Presente"/"Ausente") confirma el guardado real.
-  const presentRow = page.getByTestId(`attendance-row-${athletePresent.id}`);
-  const absentRow = page.getByTestId(`attendance-row-${athleteAbsent.id}`);
-  await expect(presentRow).toContainText("Presente");
-  await expect(absentRow).toContainText("Ausente");
+  // `aria-pressed` solo es `true` para el estado REAL de la fila: el texto de la
+  // fila contiene las etiquetas de los TRES botones y nunca distingue el estado.
+  const presentButton = page.getByTestId(`attendance-PRESENTE-${athletePresent.id}`);
+  const absentButton = page.getByTestId(`attendance-AUSENTE-${athleteAbsent.id}`);
+  await expect(presentButton).toHaveAttribute("aria-pressed", "true");
+  await expect(absentButton).toHaveAttribute("aria-pressed", "true");
 
   // ── Recargar: los estados vienen del detalle del servidor (upsert real) ──
   await page.reload();
   await expect(page.getByTestId("attendance-grid")).toBeVisible();
-  await expect(page.getByTestId(`attendance-row-${athletePresent.id}`)).toContainText("Presente");
-  await expect(page.getByTestId(`attendance-row-${athleteAbsent.id}`)).toContainText("Ausente");
+  await expect(presentButton).toHaveAttribute("aria-pressed", "true");
+  await expect(absentButton).toHaveAttribute("aria-pressed", "true");
+  // El estado es excluyente: el botón contrario de cada fila queda sin pulsar.
+  await expect(page.getByTestId(`attendance-AUSENTE-${athletePresent.id}`)).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId(`attendance-PRESENTE-${athleteAbsent.id}`)).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId(`attendance-unmarked-${athletePresent.id}`)).toHaveCount(0);
+  await expect(page.getByTestId(`attendance-unmarked-${athleteAbsent.id}`)).toHaveCount(0);
 });

@@ -100,13 +100,16 @@ USER no ve "Entrenamientos" ni "Tabla nacional" mientras un ADMIN sí.
 - **WHEN** el spec inicia sesión como USER
 - **THEN** el nav no contiene "Entrenamientos" ni "Tabla nacional"
 
-### Requirement: Flujo E2E de alta de deportista en dos pasos
-La suite SHALL verificar el alta real de un deportista a través del wizard de dos
-pasos (datos del atleta y perfil) con un nombre único, terminando en la ficha del
-atleta y visible en la lista.
+### Requirement: Flujo E2E de alta de deportista en tres pasos
+La suite SHALL verificar el alta real de un deportista a través del wizard de tres
+pasos (datos básicos, fecha de nacimiento y perfil antropométrico) con un nombre
+único: completa los dos primeros y omite el perfil ("Omitir y terminar"),
+terminando en la ficha del atleta y visible en la lista. El paso de perfil queda
+cubierto por la suite unit (el E2E no lo ejercita).
 
-#### Scenario: Alta completa desde la UI
-- **WHEN** un ADMIN completa el wizard con un atleta único y continúa al perfil
+#### Scenario: Alta desde la UI
+- **WHEN** un ADMIN completa los datos básicos y la fecha de nacimiento de un atleta
+  único y omite el perfil
 - **THEN** la ficha del atleta se abre y el atleta aparece en la lista
 
 ### Requirement: Flujo E2E de pase de lista persistente
@@ -133,20 +136,23 @@ servidor (el front nunca formatea).
 
 ### Requirement: Flujo E2E de generación y descarga de PDF
 La suite SHALL verificar contra la API real la generación síncrona de un reporte
-INDIVIDUAL (spinner durante la request; `status` final `GENERATED` leído de la
-201), la descarga del PDF binario con el filename del `Content-Disposition` y
-magic number `%PDF`, y que ante un fallo de generación del servidor el dialog
-permanece abierto mostrando un mensaje seguro redactado por el front (nunca el
-texto crudo del backend). El estado `FAILED` con `errorMessage` visible queda
-cubierto por la suite unit: contra el backend real el fallo de ensamblado
-responde 500 (transacción anidada rollback-only) y no `201 FAILED` — prerrequisito
-registrado en doc 09.
+INDIVIDUAL (el `status` final `GENERATED` se lee de la 201), la descarga del PDF
+binario con un filename que identifique el reporte y magic number `%PDF`, y que
+ante un fallo de generación del servidor el dialog permanece abierto mostrando un
+mensaje seguro redactado por el front (nunca el texto crudo del backend). El back
+sirve `reporte-individual-{id}.pdf`, pero hoy no expone `Content-Disposition` en
+CORS, así que la UI usa su fallback `reporte-{id}.pdf` y el spec aserta ese
+fallback (el nombre del servidor queda tras el prerrequisito T12 del doc 09). El
+estado `FAILED` con `errorMessage` visible queda cubierto por la suite unit:
+contra el backend real el fallo de ensamblado responde 500 (transacción anidada
+rollback-only) y no `201 FAILED` — prerrequisito registrado en doc 09.
 
 #### Scenario: Reporte generado y descargado
 - **WHEN** un ADMIN genera un reporte INDIVIDUAL de un atleta con chequeos y
       pulsa "Descargar PDF"
-- **THEN** la descarga produce un archivo que comienza con `%PDF` con el nombre
-      del `Content-Disposition` (fallback `reporte-{id}.pdf`) y tamaño > 0
+- **THEN** la descarga produce un archivo que comienza con `%PDF` con un nombre
+      que identifica el reporte (hoy el fallback `reporte-{id}.pdf` de la UI) y
+      tamaño > 0
 
 #### Scenario: Generación fallida visible
 - **WHEN** un ADMIN genera un reporte INDIVIDUAL cuyo ensamblado falla en el
