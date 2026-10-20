@@ -12,7 +12,7 @@ import { apiFetch } from "@/lib/api";
 import type { UserResponse } from "@/lib/api/types";
 import { useSessionStore } from "@/lib/auth/session-store";
 
-import { USERS_PAGE_SIZE } from "./users-api";
+import { USERS_LIST_KEY, USERS_PAGE_SIZE } from "./users-api";
 import { UsersPage } from "./users-page";
 
 /*
@@ -87,6 +87,8 @@ function renderPage() {
     </MemoryRouter>,
     { wrapper },
   );
+
+  return queryClient;
 }
 
 /** Monta la tabla REAL de rutas (mismo grafo que producción, sin window.history). */
@@ -170,6 +172,54 @@ describe("UsersPage — lista (C1/C4/C7)", () => {
     await user.click(screen.getByTestId("users-pagination-prev"));
     expect(await screen.findByText("staff1")).toBeInTheDocument();
     expect(apiFetchMock).toHaveBeenCalledTimes(1); // Anterior tampoco consulta
+  });
+
+  it("muestra el estado de carga mientras la query está pendiente", async () => {
+    signInAs(["ADMIN"]);
+    let resolveUsers: (users: UserResponse[]) => void = () => {};
+    apiFetchMock.mockReturnValueOnce(
+      new Promise<UserResponse[]>((resolve) => {
+        resolveUsers = resolve;
+      }),
+    );
+    renderPage();
+
+    const loading = await screen.findByTestId("users-loading");
+    expect(loading).toBeInTheDocument();
+    expect(screen.getByText("Cargando usuarios")).toBeInTheDocument();
+    expect(screen.queryByTestId("users-list")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("users-empty")).not.toBeInTheDocument();
+
+    resolveUsers(makeUsers(1));
+
+    expect(await screen.findByTestId("users-list")).toBeInTheDocument();
+    expect(screen.queryByTestId("users-loading")).not.toBeInTheDocument();
+  });
+
+  it("un refetch que reduce la lista recorta la página fuera de rango", async () => {
+    signInAs(["ADMIN"]);
+    apiFetchMock
+      .mockResolvedValueOnce(makeUsers(USERS_PAGE_SIZE + 2))
+      .mockResolvedValueOnce(makeUsers(3));
+    const queryClient = renderPage();
+
+    expect(await screen.findByText("staff1")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("users-pagination-next"));
+    expect(await screen.findByText("staff11")).toBeInTheDocument();
+    expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
+
+    // Refetch con menos datos: 2 páginas → 1 página (la actual deja de existir).
+    await queryClient.refetchQueries({ queryKey: USERS_LIST_KEY });
+
+    await waitFor(() => expect(screen.getByText(/Página 1 de 1/)).toBeInTheDocument());
+    expect(screen.getByText(/3 usuarios en total/)).toBeInTheDocument();
+    expect(within(screen.getByTestId("users-list")).getAllByRole("row")).toHaveLength(4); // cabecera + 3
+    expect(screen.getByText("staff1")).toBeInTheDocument();
+    expect(screen.queryByText("staff11")).not.toBeInTheDocument();
+    expect(screen.getByTestId("users-pagination-prev")).toBeDisabled();
+    expect(screen.getByTestId("users-pagination-next")).toBeDisabled();
+    expect(screen.queryByText(/Página 2 de 1/)).not.toBeInTheDocument();
   });
 
   it("lista vacía: estado vacío", async () => {

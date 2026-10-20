@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,10 +32,24 @@ export function UsersPage() {
   const usersQuery = useUsers();
 
   const users = usersQuery.data ?? [];
-  const pageModel = paginateClientSide(users, page, USERS_PAGE_SIZE);
-  const totalPages = Math.ceil(pageModel.totalItems / USERS_PAGE_SIZE);
-  const hasPrev = page > 0;
-  const hasNext = page < totalPages - 1;
+  const totalPages = Math.max(Math.ceil(users.length / USERS_PAGE_SIZE), 1);
+  /*
+   * Recorte tras un refetch que reduce la lista: si `page` queda fuera de rango
+   * (solo alcanzable con datos en vivo manteniendo la página, o reutilizando el
+   * patrón en fase B), se renderiza la última válida y se normaliza el estado.
+   * El clamp derivado evita un render intermedio vacío; el efecto deja `page`
+   * consistente para el siguiente clic.
+   */
+  const currentPage = Math.min(page, totalPages - 1);
+  const pageModel = paginateClientSide(users, currentPage, USERS_PAGE_SIZE);
+  const hasPrev = currentPage > 0;
+  const hasNext = currentPage < totalPages - 1;
+
+  useEffect(() => {
+    if (page !== currentPage) {
+      setPage(currentPage);
+    }
+  }, [page, currentPage]);
 
   return (
     <div className="grid gap-4" data-testid="users-page">
@@ -105,7 +119,7 @@ export function UsersPage() {
       {users.length > 0 ? (
         <nav className="flex items-center justify-between gap-3" aria-label="Paginación de usuarios">
           <p className="text-dim text-caption">
-            Página {page + 1} de {Math.max(totalPages, 1)} · {pageModel.totalItems} usuario
+            Página {currentPage + 1} de {totalPages} · {pageModel.totalItems} usuario
             {pageModel.totalItems === 1 ? "" : "s"} en total
           </p>
           <div className="flex gap-2">
@@ -113,7 +127,7 @@ export function UsersPage() {
               type="button"
               variant="outline"
               disabled={!hasPrev}
-              onClick={() => setPage((current) => Math.max(current - 1, 0))}
+              onClick={() => setPage(Math.max(currentPage - 1, 0))}
               data-testid="users-pagination-prev"
             >
               Anterior
@@ -122,7 +136,7 @@ export function UsersPage() {
               type="button"
               variant="outline"
               disabled={!hasNext}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => setPage(currentPage + 1)}
               data-testid="users-pagination-next"
             >
               Siguiente
