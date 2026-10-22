@@ -28,17 +28,18 @@ SPA en **React 19 + TypeScript + Vite 8**, único cliente de **AthleteCore API**
   que una programación pausada trae fecha futura y la UI debe marcarla como "Pausada".
 - **D7**: `gestion-usuarios` se implementó en dos fases. Fase A (lista `/usuarios`
   solo ADMIN) y fase B (dialog "Nuevo usuario" con rol + retiro de `/registro` en un
-  solo corte) están aterrizadas en el change `alta-usuarios-admin`. El back entregó
-  **P1** (`POST /users` solo ADMIN), **P2** (alta con `roles` + `UserResponse.roles`)
-  y **P3** (seed Flyway del admin inicial). El front ya no ofrece registro público:
-  la única vía de alta es el dialog de `/usuarios` para ADMIN.
+  solo corte) están implementadas y archivadas; las specs principales ya están
+  sincronizadas. El back entregó **P1** (`POST /users` solo ADMIN), **P2** (alta con
+  `roles` + `UserResponse.roles`) y **P3** (seed Flyway del admin inicial). El front
+  ya no ofrece registro público: la única vía de alta es el dialog de `/usuarios`
+  para ADMIN.
 
 ## Mapa de agentes especializados
 
 | Agente | Dueño de |
 |---|---|
 | `api-client-keeper` | Tipos TS de DTOs, cliente fetch + interceptores, hooks TanStack Query, adapters de paginación |
-| `auth-guardian` | Login/registro, sesión (Zustand), guards por rol, expiración |
+| `auth-guardian` | Login y sesión (el registro público está cerrado), guards por rol, expiración |
 | `athletes-ui` | Pantallas de deportistas (lista paginada, ficha, alta 2 pasos, perfil, deportes) |
 | `training-ui` | Planes/ciclos/sesiones, pase de lista, alertas (solo ADMIN/COACH) |
 | `checkups-ui` | Chequeos, tiempos, comparación, tabla nacional |

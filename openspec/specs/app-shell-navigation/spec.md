@@ -1,10 +1,9 @@
 # app-shell-navigation Specification
 
 ## Purpose
-Define el shell de la aplicación: navegación principal persistente, separación de rutas públicas y privadas con guards, filtrado de navegación por roles del JWT y los estados compartidos de UI (carga, vacío, error, sin permisos) que consumen todos los módulos.
+Define el shell de la aplicación: navegación principal persistente, separación de rutas públicas y privadas con guards (solo `/login` es pública), filtrado de navegación por roles del JWT y los estados compartidos de UI (carga, vacío, error, sin permisos) que consumen todos los módulos.
 
 ## Requirements
-
 ### Requirement: Shell con navegación principal
 El sistema SHALL renderizar un shell persistente con navegación a las secciones principales: dashboard, deportistas, entrenamientos, tabla nacional (solo ADMIN), usuarios (solo ADMIN) y reportes. La antigua entrada "Chequeos" desaparece: los chequeos viven como pestaña de la ficha del atleta.
 
@@ -17,7 +16,11 @@ El sistema SHALL renderizar un shell persistente con navegación a las secciones
 - **THEN** la navegación no contiene un ítem "Chequeos" independiente
 
 ### Requirement: Rutas públicas y privadas
-El sistema SHALL exponer `/login` y `/registro` como rutas públicas y proteger el resto; un usuario sin sesión o con token expirado MUST ser redirigido a `/login`.
+El sistema SHALL exponer únicamente `/login` como ruta pública y proteger el
+resto; un usuario sin sesión o con token expirado MUST ser redirigido a
+`/login`. La ruta pública de registro `/registro` MUST desaparecer (el registro
+abierto se cierra: la creación de usuarios vive en `/usuarios` solo para ADMIN,
+tras el prerrequisito P1 del back que cierra `POST /users` público).
 
 #### Scenario: Acceder sin sesión
 - **WHEN** un usuario sin token navega a una ruta privada
@@ -28,8 +31,13 @@ El sistema SHALL exponer `/login` y `/registro` como rutas públicas y proteger 
 - **THEN** la sesión se limpia y redirige a `/login`
 
 #### Scenario: Usuario autenticado va al login
-- **WHEN** un usuario con sesión vigente navega a `/login` o `/registro`
+- **WHEN** un usuario con sesión vigente navega a `/login`
 - **THEN** es redirigido al dashboard
+
+#### Scenario: La ruta de registro ya no existe
+- **WHEN** cualquiera navega a `/registro`
+- **THEN** no existe ruta de registro y la navegación termina en `/login`
+  (catch-all → `/` → `RequireAuth`)
 
 ### Requirement: Navegación filtrada por rol
 El sistema SHALL mostrar únicamente las opciones de navegación permitidas para los roles presentes en el JWT; entrenamientos SHALL ser visible solo para ADMIN/COACH, tabla nacional SHALL ser visible solo para ADMIN y usuarios SHALL ser visible solo para ADMIN.

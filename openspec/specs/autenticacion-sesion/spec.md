@@ -2,15 +2,14 @@
 
 ## Purpose
 
-Autenticación y sesión del SPA contra `POST /api/v1/auth/login` (y registro público
-`POST /api/v1/users`): login real, registro con validación local, ciclo de vida del token
-persistido con expiración proactiva por claim `exp`, y autorización por claims `roles[]`
-(ocultar es UX; el back siempre re-valida). Sin refresh token hoy (D1) — la capa de sesión
-vive tras la abstracción `AuthTokens { access, refresh? }`: la expiración termina en
-re-login.
+Autenticación y sesión del SPA contra `POST /api/v1/auth/login`: login real,
+ciclo de vida del token persistido con expiración proactiva por claim `exp`, y
+autorización por claims `roles[]` (ocultar es UX; el back siempre re-valida). El
+registro público está cerrado: la creación de usuarios vive en `gestion-usuarios`
+(solo ADMIN). Sin refresh token hoy (D1) — la capa de sesión vive tras la
+abstracción `AuthTokens { access, refresh? }`: la expiración termina en re-login.
 
 ## Requirements
-
 ### Requirement: Login real contra la API
 El sistema SHALL autenticar al usuario contra `POST /api/v1/auth/login` con `username` y `password`; ante 200 SHALL persistir el token y el resto de claims decodificables; ante 401 SHALL mostrar "Credenciales inválidas" en un validation banner con `role="alert"` situado sobre las acciones del formulario.
 
@@ -25,29 +24,6 @@ El sistema SHALL autenticar al usuario contra `POST /api/v1/auth/login` con `use
 #### Scenario: Sin distinción anti-enumeración
 - **WHEN** el usuario no existe o la password es errónea
 - **THEN** el mensaje mostrado es idéntico en ambos casos
-
-### Requirement: Registro público
-El sistema SHALL ofrecer `/registro` con username (3–50), email válido, firstName, lastName, password (≥6) y confirmPassword con validación local; ante éxito (201) SHALL redirigir a `/login` indicando que puede iniciar sesión.
-
-#### Scenario: Alta correcta
-- **WHEN** el registro devuelve 201
-- **THEN** el usuario es llevado a `/login` con aviso de éxito y sin sesión iniciada
-
-#### Scenario: Contraseñas distintas
-- **WHEN** password y confirmPassword no coinciden
-- **THEN** el campo muestra estado de error antes de enviar la petición
-
-#### Scenario: Username duplicado
-- **WHEN** el servidor responde 409 con `message` "User with username already exists"
-- **THEN** se muestra estado de error en el campo username sin texto crudo del backend
-
-#### Scenario: Email duplicado
-- **WHEN** el servidor responde 409 con `message` "User with email already exists"
-- **THEN** se muestra estado de error en el campo email, no en el username
-
-#### Scenario: Error de validación de servidor
-- **WHEN** el servidor responde 400 pese a la validación local
-- **THEN** se muestran los mensajes del contrato mapeados al español, nunca el texto crudo del backend
 
 ### Requirement: Ciclo de vida de la sesión
 El sistema SHALL persistir el token en `localStorage` y SHALL considerar vencida la sesión usando el claim `exp` (o `expiresIn` en ms si falta el claim); al expirar SHALL limpiar la sesión y redirigir a `/login` sin esperar una llamada fallida.
