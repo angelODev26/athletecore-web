@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 import { isApiError, toUserFacingMessage } from "@/lib/api";
@@ -20,8 +20,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const justRegistered = searchParams.get("registrado") === "1";
   const loginMutation = useLoginMutation();
 
   const form = useForm<LoginFormValues>({
@@ -60,12 +58,6 @@ export function LoginPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4" noValidate>
-              {justRegistered ? (
-                <Alert data-testid="register-success">
-                  <AlertTitle>Cuenta creada</AlertTitle>
-                  <AlertDescription>Ya puedes iniciar sesión con tus credenciales.</AlertDescription>
-                </Alert>
-              ) : null}
               {serverErrorMessage ? (
                 <Alert variant="destructive" role="alert" data-testid="login-error">
                   <AlertTitle>Error de acceso</AlertTitle>
@@ -106,12 +98,6 @@ export function LoginPage() {
               >
                 {loginMutation.isPending ? "Accediendo…" : "Iniciar sesión"}
               </Button>
-              <p className="text-dim text-center text-label">
-                ¿No tienes cuenta?{" "}
-                <Link to="/registro" className="text-primary-text hover:underline">
-                  Regístrate
-                </Link>
-              </p>
             </form>
           </Form>
         </CardContent>

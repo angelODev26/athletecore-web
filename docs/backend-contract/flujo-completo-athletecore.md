@@ -23,7 +23,7 @@ sequenceDiagram
 
     C->>SEC: request con Authorization Bearer
     Note over SEC: Puntos de corte antes de la lógica de negocio
-    alt ruta pública (registro o login)
+    alt ruta pública (login o refresh)
         SEC->>CTL: pasa sin token
     else token ausente, inválido o expirado
         SEC-->>C: ⚠️ 401 Autenticación requerida

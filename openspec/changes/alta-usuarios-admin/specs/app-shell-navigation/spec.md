@@ -23,4 +23,5 @@ tras el prerrequisito P1 del back que cierra `POST /users` público).
 
 #### Scenario: La ruta de registro ya no existe
 - **WHEN** cualquiera navega a `/registro`
-- **THEN** no existe ruta de registro y se muestra el estado de error de ruta
+- **THEN** no existe ruta de registro y la navegación termina en `/login`
+  (catch-all → `/` → `RequireAuth`)

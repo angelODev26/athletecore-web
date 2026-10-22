@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useHasAnyRole } from "@/lib/auth/session-store";
+import { UserFormDialog, userRoleLabel } from "@/modules/users/user-form";
 import { USERS_PAGE_SIZE, paginateClientSide, useUsers } from "@/modules/users/users-api";
 import { EmptyState, ErrorState, LoadingState } from "@/shared/components/states";
 
@@ -22,6 +25,9 @@ import { EmptyState, ErrorState, LoadingState } from "@/shared/components/states
  * PUT /users/{id}); `active` NO se muestra (doc 03 §5: siempre true en la
  * práctica). D2: `GET /users` no pagina en el back, así que la paginación es
  * CLIENTE — pulsar Anterior/Siguiente NO llama de nuevo al back.
+ *
+ * Fase B: el botón "Nuevo usuario" abre el dialog de alta (solo ADMIN) y la
+ * columna "Rol" renderiza `roles` de forma tolerante si el campo viniera ausente.
  */
 
 /** El estado "Activa" usa el rol de status; "Inactiva" queda neutra (no es un error). */
@@ -29,6 +35,9 @@ const ENABLED_BADGE_CLASS = "bg-success-subtle text-success border-transparent";
 
 export function UsersPage() {
   const [page, setPage] = useState(0);
+  const [formOpen, setFormOpen] = useState(false);
+  const [createdUsername, setCreatedUsername] = useState<string | null>(null);
+  const isAdmin = useHasAnyRole(["ADMIN"]);
   const usersQuery = useUsers();
 
   const users = usersQuery.data ?? [];
@@ -53,10 +62,33 @@ export function UsersPage() {
 
   return (
     <div className="grid gap-4" data-testid="users-page">
-      <header>
-        <h1 className="text-heading text-strong font-semibold">Usuarios</h1>
-        <p className="text-dim text-body">Cuentas del staff con acceso a AthleteCore.</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-heading text-strong font-semibold">Usuarios</h1>
+          <p className="text-dim text-body">Cuentas del staff con acceso a AthleteCore.</p>
+        </div>
+        {isAdmin ? (
+          <Button
+            type="button"
+            onClick={() => {
+              setCreatedUsername(null);
+              setFormOpen(true);
+            }}
+            data-testid="user-new-button"
+          >
+            Nuevo usuario
+          </Button>
+        ) : null}
       </header>
+
+      {createdUsername ? (
+        <Alert data-testid="user-created-success">
+          <AlertTitle>Usuario creado</AlertTitle>
+          <AlertDescription>
+            «{createdUsername}» ya está en la lista. Si no lo ves en esta página, usa la paginación.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       {usersQuery.isError ? (
         <div data-testid="users-error">
@@ -89,6 +121,7 @@ export function UsersPage() {
                 <TableHead className="text-dim text-caption">Usuario</TableHead>
                 <TableHead className="text-dim text-caption">Nombre</TableHead>
                 <TableHead className="text-dim text-caption">Email</TableHead>
+                <TableHead className="text-dim text-caption">Rol</TableHead>
                 <TableHead className="text-dim text-caption">Estado</TableHead>
               </TableRow>
             </TableHeader>
@@ -100,6 +133,11 @@ export function UsersPage() {
                     {user.firstName} {user.lastName}
                   </TableCell>
                   <TableCell className="text-body">{user.email}</TableCell>
+                  <TableCell className="text-body" data-testid={`user-roles-${user.id}`}>
+                    {user.roles && user.roles.length > 0
+                      ? user.roles.map(userRoleLabel).join(", ")
+                      : "—"}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={user.enabled ? "default" : "outline"}
@@ -150,6 +188,15 @@ export function UsersPage() {
           </div>
         </nav>
       ) : null}
+
+      <UserFormDialog
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        onCreated={(created) => {
+          setCreatedUsername(created.username);
+          setPage(0);
+        }}
+      />
     </div>
   );
 }

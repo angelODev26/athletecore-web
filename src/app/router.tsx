@@ -7,7 +7,6 @@ import { AthleteDetailPage } from "@/modules/athletes/athlete-detail-page";
 import { AthleteEditPage } from "@/modules/athletes/athlete-edit-page";
 import { AthletesListPage } from "@/modules/athletes/athletes-list-page";
 import { LoginPage } from "@/modules/auth/login-page";
-import { RegisterPage } from "@/modules/auth/register-page";
 import { AthleteCheckupsPage } from "@/modules/checkups/athlete-checkups-page";
 import { CheckupDetailPage } from "@/modules/checkups/checkup-detail-page";
 import { NationalReferencePage } from "@/modules/checkups/national-reference-page";
@@ -34,14 +33,6 @@ export const appRoutes: RouteObject[] = [
     element: (
       <RequireGuest>
         <LoginPage />
-      </RequireGuest>
-    ),
-  },
-  {
-    path: "/registro",
-    element: (
-      <RequireGuest>
-        <RegisterPage />
       </RequireGuest>
     ),
   },

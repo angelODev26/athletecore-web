@@ -10,6 +10,11 @@ export {
 export { toPageModel, type PageModel } from "./pagination";
 export { moduleQueryKey, queryClient } from "./query-client";
 export { getDuplicateField, toUserFacingMessage } from "./messages";
+export {
+  PASSWORD_MIN_BACKEND_MESSAGE,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MIN_MESSAGE,
+} from "./password-policy";
 export type {
   AssignSportsRequest,
   AttendanceAlertResponse,
@@ -25,13 +30,13 @@ export type {
   CreateReportScheduleRequest,
   CreateSessionRequest,
   CreateTrainingPlanRequest,
+  CreateUserRequest,
   CycleType,
   GenerateReportRequest,
   IndividualReportResponse,
   JwtClaims,
   LoginRequest,
   LoginResponse,
-  RegisterRequest,
   RegisterAttendanceRequest,
   ReportDetailResponse,
   ReportExportResponse,

@@ -1,16 +1,18 @@
 import type { ApiError } from "./errors";
+import { PASSWORD_MIN_BACKEND_MESSAGE, PASSWORD_MIN_MESSAGE } from "./password-policy";
 
 /*
  * Mapeo de mensajes del backend (contrato docs 02/03/08) a texto de usuario.
- * El DTO de registro valida en INGLÉS (doc 03 §3) y `details` concatena mensajes
- * sin nombres de campo (doc 08 §1) — nunca mostrar esos textos crudos.
+ * El DTO de alta de usuario (`POST /users`, solo ADMIN) valida en INGLÉS (doc 03
+ * §3) y `details` concatena mensajes sin nombres de campo (doc 08 §1) — nunca
+ * mostrar esos textos crudos.
  */
 const KNOWN_BACKEND_MESSAGES: Record<string, string> = {
-  // DTO de registro (el back los emite en inglés)
+  // DTO de alta de usuario (el back los emite en inglés)
   "Username must be between 3 and 50 characters":
     "El nombre de usuario debe tener entre 3 y 50 caracteres",
   "Email should be valid": "Introduce un email válido",
-  "Password must be at least 6 characters": "La contraseña debe tener al menos 6 caracteres",
+  [PASSWORD_MIN_BACKEND_MESSAGE]: PASSWORD_MIN_MESSAGE,
   // Duplicados del módulo chequeos (contrato doc 06, emitidos por
   // `DuplicateResourceException(String, String)` en inglés)
   "Checkup with athleteId/year/month/category already exists":
@@ -22,7 +24,7 @@ const KNOWN_BACKEND_MESSAGES: Record<string, string> = {
 };
 
 // Mensajes del contrato que ya llegan en español del back y son seguros de
-// mostrar tal cual (validación de login, reglas de negocio del registro).
+// mostrar tal cual (validación de login, reglas de negocio del alta).
 const SPANISH_CONTRACT_MESSAGES = new Set([
   "El nombre de usuario es obligatorio",
   "La contraseña es obligatoria",
@@ -52,8 +54,10 @@ export function toUserFacingMessage(error: ApiError): string {
 }
 
 /**
- * Para el 409 de registro devuelve el campo en conflicto según el contrato
+ * Para el 409 de alta de usuario devuelve el campo en conflicto según el contrato
  * (doc 03 §3: "User with username already exists" / "User with email already exists").
+ * El 409 genérico de integridad (soft delete/carrera) devuelve `null`: se muestra
+ * como conflicto global seguro.
  */
 export function getDuplicateField(error: ApiError): "username" | "email" | null {
   if (error.status !== 409) {

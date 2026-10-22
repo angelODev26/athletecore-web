@@ -43,9 +43,9 @@ en todas las peticiones excepto las públicas (§3).
 
 ## 2. ⚠️ Expiración de sesión — la decisión de UX más importante
 
-Como **no hay refresh token**, cuando el token expira (24 h) cualquier petición devuelve
-**401** y el usuario debe **volver a hacer login**. Esto está marcado en `TASKS.md` como
-bloqueante a decidir ANTES de construir las pantallas de auth (ver archivo `09`, D1).
+El back ya emite `refreshToken`, pero el front **todavía no lo usa** (decisión D1). Cuando
+el access token expira (24 h) cualquier petición devuelve **401** y el usuario debe
+**volver a hacer login** (ver archivo `09`, D1).
 
 Comportamiento que el front debe implementar hoy:
 
@@ -64,7 +64,7 @@ Comportamiento que el front debe implementar hoy:
 | Método | Path |
 |--------|------|
 | `POST` | `/api/v1/auth/login` |
-| `POST` | `/api/v1/users` (registro — siempre crea con `ROLE_USER`) |
+| `POST` | `/api/v1/auth/refresh` |
 
 ### Restringidos por rol a nivel de URL (`hasAnyRole("ADMIN","COACH")`)
 
@@ -82,8 +82,12 @@ Comportamiento que el front debe implementar hoy:
 
 | Endpoint | Rol |
 |---|---|
-| `GET /api/v1/users` | ADMIN |
 | `POST/PUT/DELETE /api/v1/national-reference-times/**` (tabla nacional) | ADMIN |
+
+> Además, `SecurityConfig` restringe por URL todo `/api/v1/users/**` a ADMIN y
+> `UserController` repite `@PreAuthorize("hasRole('ADMIN')")` en GET y POST. El
+> alta de usuarios ya no es pública: el registro abierto está cerrado y solo un
+> ADMIN crea cuentas con roles explícitos (ver `03` §3).
 
 (La lista completa por endpoint está en los archivos `03`–`07`.)
 
@@ -103,10 +107,11 @@ Athletes CRUD, checkups, reportes… cualquier rol válido (`ROLE_USER` incluido
 | `ROLE_COACH` | Migración V3 | Entrenamientos, asistencia y alertas |
 
 - Un usuario puede tener **varios roles** (claim `roles` es un array).
-- **Todo registro público recibe únicamente `ROLE_USER`** (`UserService.createUser`, hardcoded).
-  No existe endpoint para cambiar roles → los ADMIN/COACH se crean a mano en DB (ver `01` §5).
-- Si en el futuro se quieren "entrenadores se registran solos", hace falta cambio de backend
-  (decisión pendiente, ver `09`).
+- **El registro público está cerrado.** Un ADMIN crea usuarios vía `POST /api/v1/users`
+  con `roles` (`ADMIN`/`COACH`/`USER`, opcional; sin roles aplica `ROLE_USER`).
+- El **primer ADMIN** de cada entorno nace del seed Flyway `V6` con
+  `ADMIN_USERNAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD_HASH` (ver `01` §5), no de un flujo
+  de bootstrap del front.
 
 ### Modelo sugerido de roles en el front
 
@@ -156,11 +161,10 @@ NO a login.
   desde cualquier origen permitido sin tokens CSRF.
 - **`allow-credentials: true`** está activo cuando CORS está habilitado — compatible con
   bearer tokens en header. La elección de dónde guardar el token (memoria vs
-  `localStorage`) es del front; el back es agnóstico. (Recomendación estándar:
-  `localStorage` aquí es aceptable dado el perfil de riesgo y que no hay refresh token
-  que proteger; decisión final del equipo front.)
-- **Contraseñas**: BCrypt(12). Política de password en registro: mínimo 6 caracteres
-  (débil — la robustez extra, si se quiere, se valida en front; ver `03`).
+  `localStorage`) es del front; el back es agnóstico. El back ya emite `refreshToken`,
+  pero el front todavía no lo persiste (decisión D1): la sesión vive hasta `exp`.
+- **Contraseñas**: BCrypt(12). Política de password en el alta de usuarios: mínimo 8
+  caracteres (validado en DTO y replicado en el front; ver `03`).
 - **No hay** rate limiting ni bloqueo por fuerza bruta (backlog POST-v1.0.0). El front
   puede implementar su propio "debounce"/deshabilitar botón tras N intentos, pero no debe
   esperar 429 del servidor.

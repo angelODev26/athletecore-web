@@ -1,4 +1,6 @@
-export type Role = "USER" | "ADMIN" | "COACH";
+/** Catálogo canónico de roles del back (contrato 03 §5), en orden de presentación. */
+export const ROLES = ["ADMIN", "COACH", "USER"] as const;
+export type Role = (typeof ROLES)[number];
 
 export interface JwtClaims {
   sub?: string;
@@ -19,6 +21,12 @@ export interface UserResponse {
   lastName: string;
   enabled: boolean;
   active: boolean;
+  /**
+   * Nombres `ROLE_*` ordenados por el back (contrato 03 §5). El back actual
+   * (login, listado y alta) siempre lo envía; se mantiene opcional para que el
+   * render siga siendo tolerante ante respuestas de versiones previas a P2.
+   */
+  roles?: string[];
 }
 
 export interface LoginRequest {
@@ -28,19 +36,26 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
+  /** El back ya lo emite; el front todavía no lo persiste (decisión D1). */
+  refreshToken?: string;
   type: "Bearer";
   /** Duración en milisegundos (no es timestamp). */
   expiresIn: number;
   user: UserResponse;
 }
 
-export interface RegisterRequest {
+/**
+ * Alta de usuario por un ADMIN (`POST /users`, contrato 03 §3). `roles` es
+ * opcional: ausente/vacío el back aplica `ROLE_USER`; la UI siempre envía uno.
+ */
+export interface CreateUserRequest {
   username: string;
   email: string;
   firstName: string;
   lastName: string;
   password: string;
   confirmPassword: string;
+  roles?: string[];
 }
 
 export interface AthleteResponse {

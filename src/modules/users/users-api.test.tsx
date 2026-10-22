@@ -1,17 +1,18 @@
 // @vitest-environment jsdom
 import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { apiFetch } from "@/lib/api";
-import type { UserResponse } from "@/lib/api/types";
+import type { CreateUserRequest, UserResponse } from "@/lib/api/types";
 
 import {
   USERS_LIST_KEY,
   USERS_PAGE_SIZE,
   fetchUsers,
   paginateClientSide,
+  useCreateUser,
   useUsers,
 } from "./users-api";
 
@@ -85,6 +86,32 @@ describe("capa de datos de usuarios", () => {
     expect(secondPage.items.map((user) => user.id)).toEqual([11, 12]);
     // El adapter es puro: trocear la lista completa no dispara red.
     expect(apiFetchMock).not.toHaveBeenCalled();
+  });
+
+  it("useCreateUser hace POST /users con roles e invalida la lista", async () => {
+    const created = { ...makeUser(3), roles: ["ROLE_COACH"] };
+    apiFetchMock.mockResolvedValueOnce(created);
+    const body: CreateUserRequest = {
+      username: "coach3",
+      email: "coach3@club.com",
+      firstName: "Nombre",
+      lastName: "Apellido 3",
+      password: "secreto123",
+      confirmPassword: "secreto123",
+      roles: ["COACH"],
+    };
+
+    const { wrapper, queryClient } = createWrapper();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const { result } = renderHook(() => useCreateUser(), { wrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync(body);
+    });
+
+    expect(apiFetchMock).toHaveBeenCalledWith("/users", { method: "POST", body });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: USERS_LIST_KEY });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
   it("USERS_LIST_KEY es un destino de invalidación válido (preparada para la mutación de la fase B)", async () => {

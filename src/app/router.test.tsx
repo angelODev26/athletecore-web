@@ -238,3 +238,37 @@ describe("Router — rutas del módulo de reportes (C1, C9)", () => {
     expect(router.state.location.pathname).toBe("/athletes/1/report");
   });
 });
+
+/*
+ * Corte del registro público (`alta-usuarios-admin`, C1): `/registro` desaparece
+ * del grafo de rutas y sin sesión la única salida es `/login`. El login tampoco
+ * ofrece ya el enlace "Regístrate".
+ */
+describe("Router — registro público cerrado (C1)", () => {
+  beforeEach(() => {
+    apiFetchMock.mockReset();
+    localStorage.clear();
+    useSessionStore.setState({ tokens: null, expiresAt: null });
+  });
+
+  afterEach(() => {
+    cleanup();
+    useSessionStore.setState({ tokens: null, expiresAt: null });
+  });
+
+  it("/registro sin sesión termina en /login y no monta la página de registro", async () => {
+    const router = renderRoute("/registro");
+
+    expect(await screen.findByTestId("login-page")).toBeInTheDocument();
+    expect(screen.queryByTestId("register-page")).not.toBeInTheDocument();
+    await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
+  });
+
+  it("el login ya no ofrece el enlace 'Regístrate'", async () => {
+    renderRoute("/login");
+
+    expect(await screen.findByTestId("login-page")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Regístrate" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/¿No tienes cuenta/)).not.toBeInTheDocument();
+  });
+});

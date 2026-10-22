@@ -16,7 +16,7 @@ Este change queda **BLOQUEADO por D7** (prerrequisitos P1/P2/P3 del back, ver
 ## What Changes
 
 - **Dialog "Nuevo usuario"** en `/usuarios` (solo ADMIN) con la validación local
-  exacta del DTO (username 3–50, email, nombres ≤100, password ≥6, confirmación)
+  exacta del DTO (username 3–50, email, nombres ≤100, password ≥8, confirmación)
   más un select de rol obligatorio (`ADMIN|COACH|USER`), reutilizando
   `getDuplicateField` para marcar el 409 de username/email por campo.
 - **Corte único del registro público**: `/registro` (ruta, `register-page.tsx` y
@@ -36,6 +36,8 @@ Este change queda **BLOQUEADO por D7** (prerrequisitos P1/P2/P3 del back, ver
   cierre del registro público y el requisito del primer administrador sembrado.
 - `app-shell-navigation`: `RequireGuest` queda solo para `/login` y la ruta
   pública `/registro` desaparece.
+- `autenticacion-sesion`: se elimina el requisito "Registro público" (la pantalla
+  `/registro` y su mutación dejan de existir; el login solo autentica).
 
 ## Impact
 

@@ -93,8 +93,8 @@ Estas **no se van a cambiar** (son convenciones del proyecto, ver `core/principl
 2. **Soft delete universal con `@SQLRestriction`.** Ningún endpoint devuelve borrados;
    404 tras DELETE es el comportamiento correcto, no un bug.
 3. **Seguridad stateless.** Cada request lleva su JWT; no hay sesiones, cookies ni CSRF.
-4. **RBAC de 3 roles** con asignación manual fuera de la API (registro = siempre USER).
-   La gestión de roles por UI requiere feature nueva.
+4. **RBAC de 3 roles** (`ADMIN`/`COACH`/`USER`). Un ADMIN crea cuentas con roles desde
+   `/usuarios`; el primer ADMIN nace del seed Flyway. El registro público está cerrado.
 5. **IDs numéricos autoincrementales** expuestos en URL y JSON.
 6. **Formato de tiempos doble** (segundos + `mm:ss.fff`) — convención deliberada del
    módulo checkup; usar el string formateado del servidor en toda visualización.

@@ -59,10 +59,11 @@ useCreateUser()   // POST según la forma que publique P2 → invalida USERS_LIS
 - **La forma final del request la fija el back al implementar P2** — la UI no la
   inventa: será `RegisterRequest` + `roles` (o el DTO que el back publique).
   Verificar contra el código del back antes de implementar (tarea B.1).
-- `UserResponse.roles?: string[]` opcional, retrocompatible con el login (que hoy
-  no lo trae).
-- Al crear (201): cierra el dialog, invalida la lista, el usuario nuevo aparece
-  donde el orden del back lo sitúe (no asumir posición).
+- `UserResponse.roles?: string[]` opcional por tolerancia a respuestas previas a
+  P2; el back actual ya lo envía en login, listado y creación (contrato 03 §5).
+- Al crear (201): cierra el dialog, invalida la lista, vuelve a la primera página
+  y muestra una confirmación con el username; el usuario nuevo queda donde el
+  orden del back lo sitúe (no asumir posición ni forzar scroll).
 
 ### C3. Roles en la UI
 
@@ -79,7 +80,7 @@ useCreateUser()   // POST según la forma que publique P2 → invalida USERS_LIS
 
 - Form con las reglas EXACTAS del DTO actual (doc 03 §3, ya mapeadas en
   `messages.ts`): username 3–50, email con formato, firstName/lastName
-  obligatorios ≤100, password ≥6, confirmPassword igual. Pre-validación local
+  obligatorios ≤100, password ≥8, confirmPassword igual. Pre-validación local
   completa (mismo patrón `superRefine` que los demás forms del repo) + select de
   rol obligatorio (default `USER`).
 - 409 de username/email → `getDuplicateField` marca el campo en conflicto; 400
@@ -146,8 +147,8 @@ Back local con P1/P2 desplegados y `npm run dev`:
 
 - Alta de un COACH desde el dialog → aparece en la lista (invalidada).
 - Duplicado de username → campo marcado por `getDuplicateField`, sin texto crudo.
-- `/registro` → ya no existe (estado de error de ruta); sin sesión solo se llega a
-  `/login`.
+- `/registro` → ya no existe: sin sesión la navegación termina en `/login`
+  (catch-all → `/` → `RequireAuth`).
 - Login del admin sembrado (P3) → ve "Usuarios" y opera la lista.
 - MCP playwright con `browser_snapshot`/`browser_evaluate`.
 

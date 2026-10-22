@@ -8,9 +8,9 @@ function apiError(status: number, message: string, details?: string): ApiError {
 }
 
 describe("toUserFacingMessage", () => {
-  it("traduce mensajes del DTO de registro que el back emite en inglés", () => {
-    const error = apiError(400, "Error de validación", "Password must be at least 6 characters");
-    expect(toUserFacingMessage(error)).toBe("La contraseña debe tener al menos 6 caracteres");
+  it("traduce mensajes del DTO de alta de usuario que el back emite en inglés", () => {
+    const error = apiError(400, "Error de validación", "Password must be at least 8 characters");
+    expect(toUserFacingMessage(error)).toBe("La contraseña debe tener al menos 8 caracteres");
   });
 
   it("traduce cada parte de details concatenados con coma", () => {
@@ -57,7 +57,7 @@ describe("toUserFacingMessage", () => {
   });
 });
 
-describe("getDuplicateField (409 del registro, doc 03 §3)", () => {
+describe("getDuplicateField (409 del alta de usuario, doc 03 §3)", () => {
   it("distingue username duplicado", () => {
     expect(getDuplicateField(apiError(409, "User with username already exists"))).toBe("username");
   });

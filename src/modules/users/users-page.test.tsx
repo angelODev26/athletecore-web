@@ -5,12 +5,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, createMemoryRouter, RouterProvider } from "react-router-dom";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { appRoutes } from "@/app/router";
 import { apiFetch } from "@/lib/api";
 import type { UserResponse } from "@/lib/api/types";
 import { useSessionStore } from "@/lib/auth/session-store";
+import { installRadixPointerPolyfills } from "@/modules/checkups/test-setup";
 
 import { USERS_LIST_KEY, USERS_PAGE_SIZE } from "./users-api";
 import { UsersPage } from "./users-page";
@@ -38,6 +39,10 @@ vi.mock("react-chartjs-2", () => ({
 }));
 
 const apiFetchMock = vi.mocked(apiFetch);
+
+beforeAll(() => {
+  installRadixPointerPolyfills();
+});
 
 // Sin `globals: true` en Vitest no hay auto-cleanup del DOM entre tests.
 afterEach(cleanup);
@@ -70,6 +75,18 @@ function makeUsers(count: number, enabled = true): UserResponse[] {
     enabled,
     active: true,
   }));
+}
+
+async function fillNewUserForm(
+  user: ReturnType<typeof userEvent.setup>,
+  values: { username: string; email: string; firstName: string; lastName: string },
+) {
+  await user.type(screen.getByTestId("user-username-input"), values.username);
+  await user.type(screen.getByTestId("user-email-input"), values.email);
+  await user.type(screen.getByTestId("user-firstName-input"), values.firstName);
+  await user.type(screen.getByTestId("user-lastName-input"), values.lastName);
+  await user.type(screen.getByTestId("user-password-input"), "secreto123");
+  await user.type(screen.getByTestId("user-confirmPassword-input"), "secreto123");
 }
 
 function renderPage() {
@@ -123,12 +140,14 @@ describe("UsersPage — lista (C1/C4/C7)", () => {
     const list = await screen.findByTestId("users-list");
     expect(screen.getByTestId("users-page")).toBeInTheDocument();
 
-    // Las 4 columnas del contrato (sin rol: UserResponse no lo trae hasta P2).
+    // Las 5 columnas del contrato (roles ya viajan desde P2).
     expect(within(list).getByText("Usuario")).toBeInTheDocument();
     expect(within(list).getByText("Nombre")).toBeInTheDocument();
     expect(within(list).getByText("Email")).toBeInTheDocument();
+    expect(within(list).getByText("Rol")).toBeInTheDocument();
     expect(within(list).getByText("Estado")).toBeInTheDocument();
-    expect(within(list).queryByText("Rol")).not.toBeInTheDocument();
+    // Render tolerante: sin `roles` en la respuesta, la celda queda neutra.
+    expect(screen.getByTestId("user-roles-1")).toHaveTextContent("—");
 
     expect(within(list).getByText("staff1")).toBeInTheDocument();
     expect(within(list).getByText("Nombre Apellido 1")).toBeInTheDocument();
@@ -242,6 +261,125 @@ describe("UsersPage — lista (C1/C4/C7)", () => {
     expect(screen.queryByText(/usuarios en total/)).not.toBeInTheDocument();
     expect(screen.queryByTestId("users-pagination-prev")).not.toBeInTheDocument();
     expect(screen.queryByTestId("users-pagination-next")).not.toBeInTheDocument();
+  });
+
+  it("renderiza los roles con etiquetas ES y tolera respuestas sin roles", async () => {
+    signInAs(["ADMIN"]);
+    const [coach, legacy] = makeUsers(2);
+    apiFetchMock.mockResolvedValueOnce([
+      { ...coach, roles: ["ROLE_COACH", "ROLE_USER"] },
+      { ...legacy, roles: undefined },
+    ]);
+    renderPage();
+
+    const list = await screen.findByTestId("users-list");
+    const coachRoles = within(list).getByTestId("user-roles-1");
+    expect(coachRoles).toHaveTextContent("Entrenador / Metodólogo, Deportista");
+    expect(within(list).getByTestId("user-roles-2")).toHaveTextContent("—");
+  });
+
+  it("ADMIN ve el botón de alta y abre el dialog 'Nuevo usuario'", async () => {
+    signInAs(["ADMIN"]);
+    apiFetchMock.mockResolvedValueOnce(makeUsers(1));
+    renderPage();
+
+    const button = await screen.findByTestId("user-new-button");
+    const user = userEvent.setup();
+    await user.click(button);
+
+    const dialog = await screen.findByTestId("user-form-dialog");
+    expect(screen.getByTestId("user-form")).toBeInTheDocument();
+    expect(within(dialog).getByText("Nuevo usuario")).toBeInTheDocument();
+  });
+
+  it("alta de COACH: cierra el dialog y la lista invalidada muestra el usuario nuevo", async () => {
+    signInAs(["ADMIN"]);
+    const [adminUser, created] = makeUsers(2);
+    const createdCoach = { ...created, username: "coach2", email: "coach2@club.com", roles: ["ROLE_COACH"] };
+    apiFetchMock
+      .mockResolvedValueOnce([adminUser])
+      .mockResolvedValueOnce(createdCoach)
+      .mockResolvedValueOnce([adminUser, createdCoach]);
+    renderPage();
+
+    expect(await screen.findByText("staff1")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("user-new-button"));
+
+    await screen.findByTestId("user-form");
+    await fillNewUserForm(user, {
+      username: "coach2",
+      email: "coach2@club.com",
+      firstName: "Carlos",
+      lastName: "Coach",
+    });
+
+    await user.click(screen.getByTestId("user-role-select"));
+    await user.click(await screen.findByRole("option", { name: "Entrenador / Metodólogo" }));
+    await user.click(screen.getByTestId("user-submit"));
+
+    await waitFor(() => expect(screen.queryByTestId("user-form-dialog")).not.toBeInTheDocument());
+    expect(await screen.findByTestId("user-row-2")).toBeInTheDocument();
+    expect(screen.getByTestId("user-roles-2")).toHaveTextContent("Entrenador / Metodólogo");
+    expect(screen.getByTestId("user-created-success")).toHaveTextContent("«coach2»");
+    expect(apiFetchMock).toHaveBeenCalledWith("/users", {
+      method: "POST",
+      body: {
+        username: "coach2",
+        email: "coach2@club.com",
+        firstName: "Carlos",
+        lastName: "Coach",
+        password: "secreto123",
+        confirmPassword: "secreto123",
+        roles: ["COACH"],
+      },
+    });
+  });
+
+  it("al crear desde una página > 0 vuelve a la primera y confirma el alta", async () => {
+    signInAs(["ADMIN"]);
+    const initial = makeUsers(USERS_PAGE_SIZE + 2);
+    const created = {
+      ...makeUsers(USERS_PAGE_SIZE + 3)[USERS_PAGE_SIZE + 2],
+      username: "nuevo12",
+      email: "nuevo12@club.com",
+      roles: ["ROLE_USER"],
+    };
+    apiFetchMock
+      .mockResolvedValueOnce(initial)
+      .mockResolvedValueOnce(created)
+      .mockResolvedValueOnce([...initial, created]);
+    renderPage();
+
+    expect(await screen.findByText("staff1")).toBeInTheDocument();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("users-pagination-next"));
+    expect(await screen.findByText("staff11")).toBeInTheDocument();
+    expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("user-new-button"));
+    await screen.findByTestId("user-form");
+    await fillNewUserForm(user, {
+      username: "nuevo12",
+      email: "nuevo12@club.com",
+      firstName: "Nuevo",
+      lastName: "Usuario",
+    });
+    await user.click(screen.getByTestId("user-submit"));
+
+    await waitFor(() => expect(screen.queryByTestId("user-form-dialog")).not.toBeInTheDocument());
+    expect(await screen.findByTestId("user-created-success")).toHaveTextContent("«nuevo12»");
+    expect(screen.getByText(/Página 1 de 2/)).toBeInTheDocument();
+    expect(screen.getByText(/13 usuarios en total/)).toBeInTheDocument();
+  }, 15_000);
+
+  it("USER sin rol ADMIN no ve el botón de alta", async () => {
+    signInAs(["USER"]);
+    apiFetchMock.mockResolvedValueOnce(makeUsers(1));
+    renderPage();
+
+    expect(await screen.findByTestId("users-list")).toBeInTheDocument();
+    expect(screen.queryByTestId("user-new-button")).not.toBeInTheDocument();
   });
 
   it("lista vacía: estado vacío", async () => {

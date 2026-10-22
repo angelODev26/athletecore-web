@@ -46,7 +46,7 @@ en un toast/genérico como red de seguridad. (Pedir al back un formato por campo
 mejora candidata — ver `09`.)
 
 Los mensajes están en español en la mayoría de módulos, pero **algunos en inglés**
-(registro de usuarios, y los formatos tipo `"... not found with ..."` /
+(alta de usuarios, y los formatos tipo `"... not found with ..."` /
 `"... with ... already exists"`). No mostrarlos crudos al usuario final sin pasar por
 la capa de i18n del front.
 
